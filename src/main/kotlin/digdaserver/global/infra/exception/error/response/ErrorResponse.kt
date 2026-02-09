@@ -3,7 +3,7 @@ package digdaserver.global.infra.exception.error.response
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import digdaserver.global.infra.exception.error.ErrorCode
-import digdaserver.global.infra.exception.error.HistoryException
+import digdaserver.global.infra.exception.error.DigdaServerException
 import java.time.LocalDateTime
 
 @JsonInclude(Include.NON_NULL)
@@ -16,7 +16,7 @@ data class ErrorResponse(
 ) {
     companion object {
 
-        fun of(e: HistoryException): ErrorResponse =
+        fun of(e: DigdaServerException): ErrorResponse =
             ErrorResponse(
                 status = e.httpStatusCode,
                 code = e.errorCode.code,

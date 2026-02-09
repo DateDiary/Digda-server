@@ -54,12 +54,6 @@ class Member(
     var password: String? = null
 ) {
 
-    @OneToMany(mappedBy = "member", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var heritages: MutableList<Heritage> = mutableListOf()
-
-    @OneToOne(mappedBy = "member", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var point: Point? = null
-
     // 기존 Builder 대응용 secondary constructor
     constructor(
         id: String,

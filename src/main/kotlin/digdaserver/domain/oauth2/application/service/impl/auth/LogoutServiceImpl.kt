@@ -2,7 +2,7 @@ package digdaserver.domain.oauth2.application.service.impl.auth
 
 import digdaserver.domain.oauth2.application.service.LogoutService
 import digdaserver.global.infra.exception.error.ErrorCode
-import digdaserver.global.infra.exception.error.HistoryException
+import digdaserver.global.infra.exception.error.DigdaServerException
 import digdaserver.global.jwt.domain.repository.JsonWebTokenRepository
 import digdaserver.global.jwt.domain.repository.SocialTokenRepository
 import digdaserver.global.jwt.util.JWTUtil
@@ -22,11 +22,11 @@ class LogoutServiceImpl(
 
     override fun logout(userId: String, refreshToken: String) {
         if (!jwtUtil.jwtVerify(refreshToken, "refresh")) {
-            throw HistoryException(ErrorCode.JWT_ERROR_TOKEN)
+            throw DigdaServerException(ErrorCode.JWT_ERROR_TOKEN)
         }
 
         val jsonWebToken = jsonWebTokenRepository.findById(refreshToken)
-            .orElseThrow { HistoryException(ErrorCode.REFRESH_TOKEN_NOT_EXIST) }
+            .orElseThrow { DigdaServerException(ErrorCode.REFRESH_TOKEN_NOT_EXIST) }
 
         socialTokenRepository.deleteByUserId(jsonWebToken.providerId)
         jsonWebTokenRepository.delete(jsonWebToken)

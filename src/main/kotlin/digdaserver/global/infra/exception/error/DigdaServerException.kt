@@ -1,6 +1,6 @@
 package digdaserver.global.infra.exception.error
 
-class HistoryException(
+class DigdaServerException(
     val errorCode: ErrorCode,
     message: String = errorCode.message,
     cause: Throwable? = null

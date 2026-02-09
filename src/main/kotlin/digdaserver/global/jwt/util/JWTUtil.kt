@@ -2,7 +2,7 @@ package digdaserver.global.jwt.util
 
 import digdaserver.domain.member.domain.entity.Role
 import digdaserver.global.infra.exception.error.ErrorCode
-import digdaserver.global.infra.exception.error.HistoryException
+import digdaserver.global.infra.exception.error.DigdaServerException
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
@@ -47,9 +47,9 @@ class JWTUtil(
 
             claims.get("id", String::class.java)
         } catch (e: ExpiredJwtException) {
-            throw HistoryException(ErrorCode.JWT_EXPIRE_TOKEN)
+            throw DigdaServerException(ErrorCode.JWT_EXPIRE_TOKEN)
         } catch (e: JwtException) {
-            throw HistoryException(ErrorCode.JWT_ERROR_TOKEN)
+            throw DigdaServerException(ErrorCode.JWT_ERROR_TOKEN)
         }
     }
 
@@ -64,9 +64,9 @@ class JWTUtil(
             val value = claims.get("role", String::class.java)
             Role.getByValue("ROLE_$value")
         } catch (e: ExpiredJwtException) {
-            throw HistoryException(ErrorCode.JWT_EXPIRE_TOKEN)
+            throw DigdaServerException(ErrorCode.JWT_EXPIRE_TOKEN)
         } catch (e: JwtException) {
-            throw HistoryException(ErrorCode.JWT_ERROR_TOKEN)
+            throw DigdaServerException(ErrorCode.JWT_ERROR_TOKEN)
         }
     }
 
