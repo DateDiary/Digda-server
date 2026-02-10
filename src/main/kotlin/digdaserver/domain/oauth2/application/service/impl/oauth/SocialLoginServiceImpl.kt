@@ -11,8 +11,6 @@ import digdaserver.domain.oauth2.presentation.dto.req.SocialTokenRequest
 import digdaserver.domain.oauth2.presentation.dto.res.LoginToken
 import digdaserver.domain.oauth2.presentation.dto.res.oatuh.KakaoTokenResponse
 import digdaserver.domain.oauth2.presentation.dto.res.oatuh.KakaoUserResponse
-import digdaserver.domain.point.domain.entity.Point
-import digdaserver.domain.point.domain.repository.PointRepository
 import digdaserver.global.infra.exception.error.ErrorCode
 import digdaserver.global.infra.exception.error.DigdaServerException
 import digdaserver.global.jwt.domain.entity.SocialToken
@@ -30,7 +28,6 @@ class SocialLoginServiceImpl(
     private val tokenService: CreateAccessTokenAndRefreshTokenService,
     private val userRepository: MemberRepository,
     private val socialTokenRepository: SocialTokenRepository,
-    private val pointRepository: PointRepository,
 
     @Value("\${oauth2.apple.profile}")
     private val appleProfile: String
@@ -151,7 +148,6 @@ class SocialLoginServiceImpl(
 
             userRepository.save(user)
 
-            pointRepository.save(Point(member = user))
         } else {
             if (user.email != userResponse.getEmail()) {
                 val duplicate = userResponse.getEmail()?.let { userRepository.findByEmail(it) }

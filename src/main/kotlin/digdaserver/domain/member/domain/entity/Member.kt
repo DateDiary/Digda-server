@@ -1,16 +1,11 @@
 package digdaserver.domain.member.domain.entity
 
-import digdaserver.domain.heritage.domain.entity.Heritage
 import digdaserver.domain.oauth2.domain.entity.SocialProvider
-import digdaserver.domain.point.domain.entity.Point
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
-import jakarta.persistence.OneToMany
-import jakarta.persistence.OneToOne
 import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
 import org.hibernate.annotations.CreationTimestamp
