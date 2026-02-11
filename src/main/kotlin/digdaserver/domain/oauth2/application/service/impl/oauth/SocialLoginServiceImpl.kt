@@ -11,10 +11,8 @@ import digdaserver.domain.oauth2.presentation.dto.req.SocialTokenRequest
 import digdaserver.domain.oauth2.presentation.dto.res.LoginToken
 import digdaserver.domain.oauth2.presentation.dto.res.oatuh.KakaoTokenResponse
 import digdaserver.domain.oauth2.presentation.dto.res.oatuh.KakaoUserResponse
-import digdaserver.domain.point.domain.entity.Point
-import digdaserver.domain.point.domain.repository.PointRepository
 import digdaserver.global.infra.exception.error.ErrorCode
-import digdaserver.global.infra.exception.error.HistoryException
+import digdaserver.global.infra.exception.error.DigdaServerException
 import digdaserver.global.jwt.domain.entity.SocialToken
 import digdaserver.global.jwt.domain.repository.SocialTokenRepository
 import jakarta.transaction.Transactional
@@ -30,7 +28,6 @@ class SocialLoginServiceImpl(
     private val tokenService: CreateAccessTokenAndRefreshTokenService,
     private val userRepository: MemberRepository,
     private val socialTokenRepository: SocialTokenRepository,
-    private val pointRepository: PointRepository,
 
     @Value("\${oauth2.apple.profile}")
     private val appleProfile: String
@@ -53,7 +50,7 @@ class SocialLoginServiceImpl(
         }
 
         if (!isValidToken!!) {
-            throw HistoryException(ErrorCode.INVALID_PARAMETER, "유효하지 않은 토큰입니다")
+            throw DigdaServerException(ErrorCode.INVALID_PARAMETER, "유효하지 않은 토큰입니다")
         }
 
         val userResponse: KakaoUserResponse =
@@ -89,7 +86,7 @@ class SocialLoginServiceImpl(
 
         // accessToken 없으면 바로 예외
         val accessToken = tokenResponse.accessToken
-            ?: throw HistoryException(ErrorCode.INVALID_PARAMETER, "access token 없음")
+            ?: throw DigdaServerException(ErrorCode.INVALID_PARAMETER, "access token 없음")
 
         val userResponse = oauth2Service.getUserInfo(accessToken)
 
@@ -111,7 +108,7 @@ class SocialLoginServiceImpl(
 
     private fun getOAuth2Service(provider: SocialProvider): OAuth2Service {
         val service = oauth2ServicesMap[provider]
-            ?: throw HistoryException(ErrorCode.INVALID_PARAMETER)
+            ?: throw DigdaServerException(ErrorCode.INVALID_PARAMETER)
 
         log.info("OAuth2Service 조회 성공: {}", service::class.simpleName)
         return service
@@ -132,7 +129,7 @@ class SocialLoginServiceImpl(
             val existingEmail = userResponse.getEmail()?.let { userRepository.findByEmail(it) }
             if (existingEmail != null) {
                 if (existingEmail.isPresent) {
-                    throw HistoryException(ErrorCode.DUPLICATE_EMAIL)
+                    throw DigdaServerException(ErrorCode.DUPLICATE_EMAIL)
                 }
             }
 
@@ -151,13 +148,12 @@ class SocialLoginServiceImpl(
 
             userRepository.save(user)
 
-            pointRepository.save(Point(member = user))
         } else {
             if (user.email != userResponse.getEmail()) {
                 val duplicate = userResponse.getEmail()?.let { userRepository.findByEmail(it) }
                 if (duplicate != null) {
                     if (duplicate.isPresent && duplicate.get().id != user.id) {
-                        throw HistoryException(ErrorCode.DUPLICATE_EMAIL)
+                        throw DigdaServerException(ErrorCode.DUPLICATE_EMAIL)
                     }
                 }
             }
@@ -193,7 +189,7 @@ class SocialLoginServiceImpl(
         }
 
         socialTokenRepository.deleteByUserIdAndProvider(userId, provider)
-        if (socialToken == null) throw HistoryException(ErrorCode.JWT_ERROR_TOKEN)
+        if (socialToken == null) throw DigdaServerException(ErrorCode.JWT_ERROR_TOKEN)
         socialTokenRepository.save(socialToken)
 
         log.info("소셜 토큰 저장 완료: userId={}, provider={}", userId, provider)

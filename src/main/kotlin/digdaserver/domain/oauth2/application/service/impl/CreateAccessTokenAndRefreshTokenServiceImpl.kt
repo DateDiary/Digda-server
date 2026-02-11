@@ -6,7 +6,7 @@ import digdaserver.domain.member.domain.repository.MemberRepository
 import digdaserver.domain.oauth2.application.service.CreateAccessTokenAndRefreshTokenService
 import digdaserver.domain.oauth2.presentation.dto.res.LoginToken
 import digdaserver.global.infra.exception.error.ErrorCode
-import digdaserver.global.infra.exception.error.HistoryException
+import digdaserver.global.infra.exception.error.DigdaServerException
 import digdaserver.global.jwt.domain.entity.JsonWebToken
 import digdaserver.global.jwt.domain.repository.JsonWebTokenRepository
 import digdaserver.global.jwt.util.JWTUtil
@@ -48,7 +48,7 @@ class CreateAccessTokenAndRefreshTokenServiceImpl(
 
     private fun onBoarding(userId: String): Boolean {
         val member: Member = memberRepository.findById(userId)
-            .orElseThrow { HistoryException(ErrorCode.USER_NOT_EXIST) }
+            .orElseThrow { DigdaServerException(ErrorCode.USER_NOT_EXIST) }
 
         return member.nameFlag
     }

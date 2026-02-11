@@ -1,7 +1,7 @@
 package digdaserver.global.infra.exception
 
 import digdaserver.global.infra.exception.error.ErrorCode
-import digdaserver.global.infra.exception.error.HistoryException
+import digdaserver.global.infra.exception.error.DigdaServerException
 import digdaserver.global.infra.exception.error.response.ErrorResponse
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
@@ -15,8 +15,8 @@ class GlobalExceptionHandler {
 
     private val log = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
-    @ExceptionHandler(HistoryException::class)
-    fun handleFlowException(e: HistoryException): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(DigdaServerException::class)
+    fun handleFlowException(e: DigdaServerException): ResponseEntity<ErrorResponse> {
         log.error(
             "HistoryException caught - ErrorCode: {}, Message: {}",
             e.errorCode,
@@ -42,7 +42,7 @@ class GlobalExceptionHandler {
         val root = e.rootCause
 
         return when (root) {
-            is HistoryException ->
+            is DigdaServerException ->
                 ResponseEntity
                     .status(root.httpStatusCode)
                     .body(ErrorResponse.of(root))

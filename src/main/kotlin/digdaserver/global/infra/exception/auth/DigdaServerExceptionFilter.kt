@@ -2,7 +2,7 @@ package digdaserver.global.infra.exception.auth
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import digdaserver.global.infra.exception.error.ErrorCode
-import digdaserver.global.infra.exception.error.HistoryException
+import digdaserver.global.infra.exception.error.DigdaServerException
 import digdaserver.global.infra.exception.error.response.ErrorResponse
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletException
@@ -12,11 +12,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.web.filter.OncePerRequestFilter
 import javax.security.sasl.AuthenticationException
 
-class HistoryAuthExceptionFilter(
+class DigdaServerExceptionFilter(
     private val objectMapper: ObjectMapper
 ) : OncePerRequestFilter() {
 
-    private val log = LoggerFactory.getLogger(HistoryAuthExceptionFilter::class.java)
+    private val log = LoggerFactory.getLogger(DigdaServerExceptionFilter::class.java)
 
     @Throws(ServletException::class, java.io.IOException::class)
     override fun doFilterInternal(
@@ -26,7 +26,7 @@ class HistoryAuthExceptionFilter(
     ) {
         try {
             filterChain.doFilter(request, response)
-        } catch (e: HistoryException) {
+        } catch (e: DigdaServerException) {
             handleFlowException(response, e)
         } catch (e: AuthenticationException) {
             handleAuthenticationException(response)
@@ -37,7 +37,7 @@ class HistoryAuthExceptionFilter(
     }
 
     @Throws(java.io.IOException::class)
-    private fun handleFlowException(response: HttpServletResponse, e: HistoryException) {
+    private fun handleFlowException(response: HttpServletResponse, e: DigdaServerException) {
         log.error(
             "Filter에서 HistoryException 발생 - ErrorCode: {}, Message: {}",
             e.errorCode,

@@ -1,7 +1,7 @@
 package digdaserver.global.infra.filter
 
 import digdaserver.global.infra.exception.error.ErrorCode
-import digdaserver.global.infra.exception.error.HistoryException
+import digdaserver.global.infra.exception.error.DigdaServerException
 import digdaserver.global.jwt.util.JWTUtil
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletException
@@ -16,12 +16,12 @@ import org.springframework.util.AntPathMatcher
 import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 
-class HistoryJWTFilter(
+class DigdaServerJWTFilter(
     private val jwtUtil: JWTUtil,
     private val excludedPaths: List<String>
 ) : OncePerRequestFilter() {
 
-    private val log = LoggerFactory.getLogger(HistoryJWTFilter::class.java)
+    private val log = LoggerFactory.getLogger(DigdaServerJWTFilter::class.java)
 
     @Throws(ServletException::class, IOException::class)
     override fun doFilterInternal(
@@ -39,7 +39,7 @@ class HistoryJWTFilter(
             val accessToken = jwtUtil.getAccessTokenFromHeaders(request)
 
             if (accessToken != null && jwtUtil.jwtVerify(accessToken, "access")) {
-                throw HistoryException(ErrorCode.DUPLICATE_LOGIN_NOT_EXIST)
+                throw DigdaServerException(ErrorCode.DUPLICATE_LOGIN_NOT_EXIST)
             }
 
             filterChain.doFilter(request, response)
@@ -62,7 +62,7 @@ class HistoryJWTFilter(
 
         // 🔐 토큰 검증 실패
         if (!jwtUtil.jwtVerify(accessToken, "access")) {
-            throw HistoryException(ErrorCode.INVALID_ACCESS_TOKEN)
+            throw DigdaServerException(ErrorCode.INVALID_ACCESS_TOKEN)
         }
 
         // 토큰 유효 → ID / Role 추출

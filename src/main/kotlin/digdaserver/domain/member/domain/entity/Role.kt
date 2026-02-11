@@ -2,7 +2,7 @@ package digdaserver.domain.member.domain.entity
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import digdaserver.global.infra.exception.error.ErrorCode
-import digdaserver.global.infra.exception.error.HistoryException
+import digdaserver.global.infra.exception.error.DigdaServerException
 
 enum class Role(val key: String) {
 
@@ -20,7 +20,7 @@ enum class Role(val key: String) {
 
         fun getByValue(value: String): Role {
             return entries.find { it.key == value }
-                ?: throw HistoryException(ErrorCode.INVALID_ROLE)
+                ?: throw DigdaServerException(ErrorCode.INVALID_ROLE)
         }
     }
 }
