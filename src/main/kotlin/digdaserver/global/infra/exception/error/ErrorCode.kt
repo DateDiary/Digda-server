@@ -42,6 +42,26 @@ enum class ErrorCode(
     OPENAI_NOT_EXIST(-300, "OpenAI 오류", 500),
     IMAGE_UPLOAD_FAILED(-301, "이미지 주소가 존재하지 않습니다.", 404),
 
+    // Group
+    GROUP_NOT_EXIST(-400, "존재하지 않는 그룹입니다.", 404),
+    GROUP_MEMBER_NOT_EXIST(-401, "그룹 멤버가 아닙니다.", 403),
+    GROUP_ALREADY_JOINED(-402, "이미 가입된 그룹입니다.", 409),
+    GROUP_OWNER_CANNOT_LEAVE(-403, "그룹 소유자는 탈퇴할 수 없습니다.", 400),
+    GROUP_INVITE_CODE_NOT_FOUND(-404, "유효하지 않은 초대 코드입니다.", 404),
+
+    // Schedule
+    SCHEDULE_NOT_EXIST(-500, "존재하지 않는 일정입니다.", 404),
+    SCHEDULE_INVALID_DATE(-501, "종료 시간이 시작 시간보다 이전입니다.", 400),
+
+    // Diary
+    DIARY_NOT_EXIST(-600, "존재하지 않는 다이어리입니다.", 404),
+
+    // Todo
+    TODO_NOT_EXIST(-700, "존재하지 않는 할 일입니다.", 404),
+
+    // Notification
+    NOTIFICATION_NOT_EXIST(-800, "존재하지 않는 알림입니다.", 404),
+
     // Point
     POINT_NOT_EXIST(-1000, "해당 포인트가 존재하지 않습니다.", 404),
     POINT_HISTORY_NOT_EXIST(-1001, "해당 포인트 내역이 존재하지 않습니다.", 404),

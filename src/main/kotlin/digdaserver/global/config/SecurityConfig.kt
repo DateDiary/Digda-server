@@ -82,6 +82,10 @@ class SecurityConfig(
                 .requestMatchers("/api/app/reissue", "/api/web/reissue").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/api/app/public/**", "/api/web/public/**").permitAll()
+                .requestMatchers("/api/group/**").authenticated()
+                .requestMatchers("/api/member/**").authenticated()
+                .requestMatchers("/api/diary/**").authenticated()
+                .requestMatchers("/api/notification/**").authenticated()
                 .anyRequest().authenticated()
         }
 
