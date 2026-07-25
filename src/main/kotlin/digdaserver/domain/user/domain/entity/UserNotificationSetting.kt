@@ -35,6 +35,12 @@ class UserNotificationSetting(
     @Column(name = "comment_notification", nullable = false)
     var commentNotification: Boolean = true,
 
+    // 모찌(캐릭터) 알림 — 게임을 제외한 캐릭터 관련(레벨업/디코/퀴즈) 푸시.
+    @Column(name = "mochi_notification", nullable = false)
+    var mochiNotification: Boolean = true,
+
+    // 마케팅 수신은 알림 설정 화면에서 제거됐지만, prod 컬럼이 NOT NULL 이라 신규 insert
+    // 안전을 위해 엔티티 필드는 dormant 로 유지한다(기본 false). API/UI 에서는 노출하지 않는다.
     @Column(name = "marketing_consent", nullable = false)
     var marketingConsent: Boolean = false
 ) {
@@ -44,12 +50,12 @@ class UserNotificationSetting(
         scheduleNotification: Boolean?,
         diaryNotification: Boolean?,
         commentNotification: Boolean?,
-        marketingConsent: Boolean?
+        mochiNotification: Boolean?
     ) {
         pushEnabled?.let { this.pushEnabled = it }
         scheduleNotification?.let { this.scheduleNotification = it }
         diaryNotification?.let { this.diaryNotification = it }
         commentNotification?.let { this.commentNotification = it }
-        marketingConsent?.let { this.marketingConsent = it }
+        mochiNotification?.let { this.mochiNotification = it }
     }
 }

@@ -33,7 +33,7 @@ class UserNotificationSettingServiceImpl(
             scheduleNotification = request.scheduleNotification,
             diaryNotification = request.diaryNotification,
             commentNotification = request.commentNotification,
-            marketingConsent = request.marketingConsent
+            mochiNotification = request.mochiNotification
         )
 
         return NotificationSettingResponse.from(setting)

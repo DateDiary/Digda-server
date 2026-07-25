@@ -184,6 +184,12 @@ class SchemaAutoMigration(
             table = "app_config",
             column = "maintenance_message",
             addSql = "ALTER TABLE app_config ADD COLUMN maintenance_message VARCHAR(300) NOT NULL DEFAULT ''"
+        ),
+        // 2.2.0 모찌(캐릭터) 알림 토글 — 게임 제외 캐릭터 관련 푸시 수신 여부. 기본 켜짐(b'1').
+        MissingColumn(
+            table = "user_notification_setting",
+            column = "mochi_notification",
+            addSql = "ALTER TABLE user_notification_setting ADD COLUMN mochi_notification BIT(1) NOT NULL DEFAULT b'1'"
         )
     )
 
@@ -224,6 +230,37 @@ class SchemaAutoMigration(
                     handled_at DATETIME(6) NULL,
                     PRIMARY KEY (deletion_request_id),
                     KEY idx_deletion_request_status_created (status, created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """.trimIndent()
+        ),
+        // 2.2.0 앱 자체 피드백 폼 — 어드민이 편집하는 문항 정의.
+        MissingTable(
+            table = "feedback_question",
+            createSql = """
+                CREATE TABLE IF NOT EXISTS feedback_question (
+                    feedback_question_id BIGINT NOT NULL AUTO_INCREMENT,
+                    display_order INT NOT NULL,
+                    type VARCHAR(32) NOT NULL,
+                    title VARCHAR(500) NOT NULL,
+                    description VARCHAR(1000) NULL,
+                    required BIT(1) NOT NULL,
+                    options TEXT NULL,
+                    active BIT(1) NOT NULL,
+                    PRIMARY KEY (feedback_question_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """.trimIndent()
+        ),
+        // 2.2.0 앱 자체 피드백 폼 — 사용자 응답(제출 시점 문항 스냅샷을 answers JSON 으로 저장).
+        MissingTable(
+            table = "feedback_submission",
+            createSql = """
+                CREATE TABLE IF NOT EXISTS feedback_submission (
+                    feedback_submission_id BIGINT NOT NULL AUTO_INCREMENT,
+                    user_id BINARY(16) NULL,
+                    answers TEXT NOT NULL,
+                    created_at DATETIME(6) NOT NULL,
+                    PRIMARY KEY (feedback_submission_id),
+                    KEY idx_feedback_submission_created (created_at)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """.trimIndent()
         )
