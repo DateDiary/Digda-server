@@ -61,16 +61,18 @@ class NotificationPushDispatcherImpl(
             NotificationType.DIARY_WRITTEN -> setting.diaryNotification
             NotificationType.COMMENT_ON_SCHEDULE,
             NotificationType.COMMENT_ON_DIARY -> setting.commentNotification
+            // 모찌(캐릭터) 알림 — 게임(GAME_INVITE)을 제외한 캐릭터 관련 푸시.
+            NotificationType.MOCHI_LEVELUP,
+            NotificationType.DIKO_UNLOCKED,
+            NotificationType.QUIZ_CREATED,
+            NotificationType.QUIZ_ANSWERED -> setting.mochiNotification
             NotificationType.MEMBER_JOINED,
             NotificationType.MEMBER_LEFT,
             NotificationType.MEMBER_REMOVED,
             NotificationType.OWNERSHIP_TRANSFERRED,
             NotificationType.GROUP_DELETE_SCHEDULED,
-            NotificationType.QUIZ_CREATED,
-            NotificationType.QUIZ_ANSWERED,
-            NotificationType.MOCHI_LEVELUP,
-            NotificationType.DIKO_UNLOCKED,
             NotificationType.GAME_INVITE,
+            NotificationType.INQUIRY_ANSWERED,
             NotificationType.ANNOUNCEMENT -> true
         }
     }
