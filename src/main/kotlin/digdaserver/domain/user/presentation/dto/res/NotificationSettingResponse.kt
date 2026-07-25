@@ -7,7 +7,7 @@ data class NotificationSettingResponse(
     val scheduleNotification: Boolean,
     val diaryNotification: Boolean,
     val commentNotification: Boolean,
-    val marketingConsent: Boolean
+    val mochiNotification: Boolean
 ) {
     companion object {
         fun from(setting: UserNotificationSetting): NotificationSettingResponse = NotificationSettingResponse(
@@ -15,7 +15,7 @@ data class NotificationSettingResponse(
             scheduleNotification = setting.scheduleNotification,
             diaryNotification = setting.diaryNotification,
             commentNotification = setting.commentNotification,
-            marketingConsent = setting.marketingConsent
+            mochiNotification = setting.mochiNotification
         )
     }
 }

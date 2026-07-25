@@ -5,5 +5,5 @@ data class UpdateNotificationSettingRequest(
     val scheduleNotification: Boolean? = null,
     val diaryNotification: Boolean? = null,
     val commentNotification: Boolean? = null,
-    val marketingConsent: Boolean? = null
+    val mochiNotification: Boolean? = null
 )
