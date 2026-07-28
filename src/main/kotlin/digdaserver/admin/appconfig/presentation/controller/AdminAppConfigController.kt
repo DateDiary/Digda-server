@@ -5,7 +5,6 @@ import digdaserver.domain.appconfig.presentation.dto.req.UpdateAppConfigRequest
 import digdaserver.domain.appconfig.presentation.dto.res.AppConfigResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -24,8 +23,6 @@ class AdminAppConfigController(
     private val appConfigService: AppConfigService
 ) {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     @Operation(summary = "앱 운영 설정 조회")
     @GetMapping
     fun get(): ResponseEntity<AppConfigResponse> =
@@ -36,12 +33,6 @@ class AdminAppConfigController(
     fun update(
         @RequestBody request: UpdateAppConfigRequest
     ): ResponseEntity<AppConfigResponse> {
-        log.info(
-            "api=PUT /api/admin/app-config, notice={}, feedback={}, maintenance={}",
-            request.noticeEnabled,
-            request.feedbackEnabled,
-            request.maintenanceEnabled
-        )
         return ResponseEntity.ok(appConfigService.update(request))
     }
 }

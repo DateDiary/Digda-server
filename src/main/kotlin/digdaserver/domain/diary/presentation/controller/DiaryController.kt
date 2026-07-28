@@ -12,8 +12,10 @@ import digdaserver.domain.diary.presentation.dto.res.DiaryListResponse
 import digdaserver.domain.diary.presentation.dto.res.DiaryReactionToggleResponse
 import digdaserver.domain.diary.presentation.dto.res.DiaryRegionMapResponse
 import digdaserver.domain.diary.presentation.dto.res.DiaryResponse
+import digdaserver.global.infra.logging.LogUserContext.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -35,6 +37,8 @@ class DiaryController(
     private val diaryService: DiaryService
 ) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Operation(summary = "일기 목록 조회", description = "그룹방의 일기 목록을 조회합니다. 월별 필터 및 페이지네이션을 지원합니다.")
     @GetMapping("/group-rooms/{groupRoomId}/diaries")
     fun getDiaries(
@@ -44,6 +48,14 @@ class DiaryController(
         @RequestParam(defaultValue = "20") limit: Int,
         @RequestParam(defaultValue = "0") offset: Int
     ): ResponseEntity<DiaryListResponse> {
+        log.info(
+            "api=GET /group-rooms/{}/diaries, userId={}, month={}, limit={}, offset={}",
+            groupRoomId,
+            currentUserId(),
+            month,
+            limit,
+            offset
+        )
         val response = diaryService.getDiaries(UUID.fromString(userId), groupRoomId, month, limit, offset)
         return ResponseEntity.ok(response)
     }
@@ -55,6 +67,12 @@ class DiaryController(
         @PathVariable groupRoomId: Long,
         @RequestParam month: YearMonth
     ): ResponseEntity<DiaryCalendarResponse> {
+        log.info(
+            "api=GET /group-rooms/{}/diaries/calendar, userId={}, month={}",
+            groupRoomId,
+            currentUserId(),
+            month
+        )
         val response = diaryService.getDiaryCalendar(UUID.fromString(userId), groupRoomId, month)
         return ResponseEntity.ok(response)
     }
@@ -69,6 +87,12 @@ class DiaryController(
         @PathVariable groupRoomId: Long,
         @RequestParam(required = false) scope: String?
     ): ResponseEntity<DiaryRegionMapResponse> {
+        log.info(
+            "api=GET /group-rooms/{}/diaries/region-map, userId={}, scope={}",
+            groupRoomId,
+            currentUserId(),
+            scope
+        )
         val response = diaryService.getDiaryRegionMap(UUID.fromString(userId), groupRoomId, scope)
         return ResponseEntity.ok(response)
     }
@@ -82,6 +106,14 @@ class DiaryController(
         @RequestParam(defaultValue = "20") limit: Int,
         @RequestParam(defaultValue = "0") offset: Int
     ): ResponseEntity<DiaryListResponse> {
+        log.info(
+            "api=GET /group-rooms/{}/diaries/by-region, userId={}, regionKey={}, limit={}, offset={}",
+            groupRoomId,
+            currentUserId(),
+            regionKey,
+            limit,
+            offset
+        )
         val response = diaryService.getDiariesByRegion(UUID.fromString(userId), groupRoomId, regionKey, limit, offset)
         return ResponseEntity.ok(response)
     }
@@ -93,6 +125,12 @@ class DiaryController(
         @PathVariable groupRoomId: Long,
         @RequestParam date: LocalDate
     ): ResponseEntity<DiaryDayResponse> {
+        log.info(
+            "api=GET /group-rooms/{}/diaries/by-date, userId={}, date={}",
+            groupRoomId,
+            currentUserId(),
+            date
+        )
         val response = diaryService.getDiariesByDate(UUID.fromString(userId), groupRoomId, date)
         return ResponseEntity.ok(response)
     }
@@ -104,7 +142,20 @@ class DiaryController(
         @PathVariable groupRoomId: Long,
         @PathVariable diaryId: Long
     ): ResponseEntity<DiaryDayResponse> {
+        log.info(
+            "api=PUT /group-rooms/{}/diaries/{}/representative, userId={}",
+            groupRoomId,
+            diaryId,
+            currentUserId()
+        )
         val response = diaryService.setRepresentative(UUID.fromString(userId), groupRoomId, diaryId)
+        log.info(
+            "api=PUT /group-rooms/{}/diaries/{}/representative 완료, userId={}, representativeDiaryId={}",
+            groupRoomId,
+            diaryId,
+            currentUserId(),
+            response.representativeDiaryId
+        )
         return ResponseEntity.ok(response)
     }
 
@@ -115,6 +166,12 @@ class DiaryController(
         @PathVariable groupRoomId: Long,
         @PathVariable diaryId: Long
     ): ResponseEntity<DiaryDetailResponse> {
+        log.info(
+            "api=GET /group-rooms/{}/diaries/{}, userId={}",
+            groupRoomId,
+            diaryId,
+            currentUserId()
+        )
         val response = diaryService.getDiaryDetail(UUID.fromString(userId), groupRoomId, diaryId)
         return ResponseEntity.ok(response)
     }
@@ -126,7 +183,22 @@ class DiaryController(
         @PathVariable groupRoomId: Long,
         @RequestBody request: CreateDiaryRequest
     ): ResponseEntity<DiaryResponse> {
+        log.info(
+            "api=POST /group-rooms/{}/diaries, userId={}, date={}, regionKey={}, imageCount={}, contentLength={}",
+            groupRoomId,
+            currentUserId(),
+            request.date,
+            request.regionKey,
+            request.imageIds.size,
+            request.content.length
+        )
         val response = diaryService.createDiary(UUID.fromString(userId), groupRoomId, request)
+        log.info(
+            "api=POST /group-rooms/{}/diaries 완료, userId={}, diaryId={}",
+            groupRoomId,
+            currentUserId(),
+            response.id
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
@@ -138,7 +210,23 @@ class DiaryController(
         @PathVariable diaryId: Long,
         @RequestBody request: UpdateDiaryRequest
     ): ResponseEntity<DiaryResponse> {
+        log.info(
+            "api=PUT /group-rooms/{}/diaries/{}, userId={}, date={}, regionKey={}, imageCount={}, contentLength={}",
+            groupRoomId,
+            diaryId,
+            currentUserId(),
+            request.date,
+            request.regionKey,
+            request.imageIds?.size,
+            request.content?.length
+        )
         val response = diaryService.updateDiary(UUID.fromString(userId), groupRoomId, diaryId, request)
+        log.info(
+            "api=PUT /group-rooms/{}/diaries/{} 완료, userId={}",
+            groupRoomId,
+            diaryId,
+            currentUserId()
+        )
         return ResponseEntity.ok(response)
     }
 
@@ -149,7 +237,19 @@ class DiaryController(
         @PathVariable groupRoomId: Long,
         @PathVariable diaryId: Long
     ): ResponseEntity<Void> {
+        log.info(
+            "api=DELETE /group-rooms/{}/diaries/{}, userId={}",
+            groupRoomId,
+            diaryId,
+            currentUserId()
+        )
         diaryService.deleteDiary(UUID.fromString(userId), groupRoomId, diaryId)
+        log.info(
+            "api=DELETE /group-rooms/{}/diaries/{} 완료, userId={}",
+            groupRoomId,
+            diaryId,
+            currentUserId()
+        )
         return ResponseEntity.noContent().build()
     }
 
@@ -160,7 +260,21 @@ class DiaryController(
         @PathVariable groupRoomId: Long,
         @PathVariable diaryId: Long
     ): ResponseEntity<DiaryLikeResponse> {
+        log.info(
+            "api=POST /group-rooms/{}/diaries/{}/like, userId={}",
+            groupRoomId,
+            diaryId,
+            currentUserId()
+        )
         val response = diaryService.toggleLike(UUID.fromString(userId), groupRoomId, diaryId)
+        log.info(
+            "api=POST /group-rooms/{}/diaries/{}/like 완료, userId={}, likedByMe={}, likeCount={}",
+            groupRoomId,
+            diaryId,
+            currentUserId(),
+            response.likedByMe,
+            response.likeCount
+        )
         return ResponseEntity.ok(response)
     }
 
@@ -172,7 +286,22 @@ class DiaryController(
         @PathVariable diaryId: Long,
         @RequestBody request: ToggleDiaryReactionRequest
     ): ResponseEntity<DiaryReactionToggleResponse> {
+        log.info(
+            "api=POST /group-rooms/{}/diaries/{}/reactions, userId={}, type={}",
+            groupRoomId,
+            diaryId,
+            currentUserId(),
+            request.type
+        )
         val response = diaryService.toggleReaction(UUID.fromString(userId), groupRoomId, diaryId, request)
+        log.info(
+            "api=POST /group-rooms/{}/diaries/{}/reactions 완료, userId={}, type={}, reactionKinds={}",
+            groupRoomId,
+            diaryId,
+            currentUserId(),
+            request.type,
+            response.reactions.size
+        )
         return ResponseEntity.ok(response)
     }
 }

@@ -2,6 +2,8 @@ package digdaserver.global.infra.filter
 
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.LogUserContext
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import digdaserver.global.jwt.util.JWTUtil
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletException
@@ -72,6 +74,13 @@ class DigdaJWTFilter(
 
         val role = jwtUtil.getRole(accessToken)
         val authority: GrantedAuthority = SimpleGrantedAuthority(role.key)
+
+        // 로그 식별자 바인딩. 이 시점부터 이 요청의 모든 로그가 사용자별 파일
+        // (/logs/users/{이메일앞부분}/)로도 함께 흘러간다. 정리는 ApiAccessLogFilter 가 한다.
+        val email = jwtUtil.getEmailOrNull(accessToken)
+        LogUserContext.bind(email)
+        // WS 컨트롤러가 UUID 만으로 사람이 읽는 식별자를 찾을 수 있게 캐시에도 적재.
+        UserLogKeyRegistry.put(userId, email)
 
         log.debug("User Role: {}", role.key)
 

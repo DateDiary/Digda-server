@@ -3,6 +3,7 @@ package digdaserver.domain.nickname_exhibit.presentation.controller
 import digdaserver.domain.nickname_exhibit.application.service.NicknameExhibitService
 import digdaserver.domain.nickname_exhibit.presentation.dto.res.NicknameExhibitAccessResponse
 import digdaserver.domain.nickname_exhibit.presentation.dto.res.NicknameExhibitResponse
+import digdaserver.global.infra.logging.LogUserContext.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -30,6 +31,7 @@ class NicknameExhibitController(
     fun checkAccess(
         @AuthenticationPrincipal userId: String
     ): ResponseEntity<NicknameExhibitAccessResponse> {
+        log.info("api=GET /nickname-exhibits/access, userId={}", currentUserId())
         val allowed = nicknameExhibitService.hasAccess(UUID.fromString(userId))
         return ResponseEntity.ok(NicknameExhibitAccessResponse(allowed = allowed))
     }
@@ -42,7 +44,7 @@ class NicknameExhibitController(
     fun list(
         @AuthenticationPrincipal userId: String
     ): ResponseEntity<List<NicknameExhibitResponse>> {
-        log.info("api=GET /nickname-exhibits, userId={}", userId)
+        log.info("api=GET /nickname-exhibits, userId={}", currentUserId())
         return ResponseEntity.ok(nicknameExhibitService.list(UUID.fromString(userId)))
     }
 }

@@ -22,6 +22,7 @@ import digdaserver.domain.schedule.presentation.dto.res.ScheduleResponse
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -175,7 +176,7 @@ class ScheduleServiceImpl(
 
     @Transactional
     override fun copySchedule(userId: UUID, groupRoomId: Long, scheduleId: Long, request: CopyScheduleRequest): ScheduleListResponse {
-        log.info("copySchedule: userId={}, groupRoomId={}, scheduleId={}, dates={}", userId, groupRoomId, scheduleId, request.dates.size)
+        log.info("copySchedule: userId={}, groupRoomId={}, scheduleId={}, dates={}", UserLogKeyRegistry.of(userId), groupRoomId, scheduleId, request.dates.size)
 
         val groupRoom = groupRoomRepository.findById(groupRoomId)
             .orElseThrow { DigdaException(ErrorCode.GROUP_ROOM_NOT_FOUND) }

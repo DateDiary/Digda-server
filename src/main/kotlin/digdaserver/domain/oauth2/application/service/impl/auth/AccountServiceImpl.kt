@@ -19,6 +19,7 @@ import digdaserver.domain.upload.domain.repository.UploadedImageRepository
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import digdaserver.global.jwt.domain.repository.JsonWebTokenRepository
 import digdaserver.global.jwt.domain.repository.SocialTokenRepository
 import jakarta.persistence.EntityManager
@@ -52,7 +53,7 @@ class AccountServiceImpl(
     private val log = LoggerFactory.getLogger(AccountServiceImpl::class.java)
 
     override fun deleteAccount(userId: UUID) {
-        log.info("userId={}, action=회원 탈퇴 요청", userId)
+        log.info("userId={}, action=회원 탈퇴 요청", UserLogKeyRegistry.of(userId))
 
         val user = userRepository.findById(userId)
             .orElseThrow { DigdaException(ErrorCode.USER_NOT_FOUND) }
@@ -155,6 +156,6 @@ class AccountServiceImpl(
         // 계정 삭제
         userRepository.delete(user)
 
-        log.info("회원 탈퇴 완료: userId={}", userId)
+        log.info("회원 탈퇴 완료: userId={}", UserLogKeyRegistry.of(userId))
     }
 }

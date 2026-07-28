@@ -3,11 +3,11 @@ package digdaserver.global.infra.exception
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
 import digdaserver.global.infra.exception.error.response.ErrorResponse
+import digdaserver.global.infra.logging.LogUserContext
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -161,11 +161,8 @@ class GlobalExceptionHandler {
      * 맞춰 같은 한 트랜잭션을 grep 으로 묶을 수 있게 한다.
      */
     private fun requestContext(request: HttpServletRequest): String {
-        val userId = SecurityContextHolder.getContext().authentication?.principal
-            ?.toString()
-            ?.takeIf { it.isNotBlank() && it != "anonymousUser" }
-            ?: "-"
         val query = request.queryString?.let { "?$it" } ?: ""
-        return "method=${request.method}, path=${request.requestURI}$query, userId=$userId"
+        return "method=${request.method}, path=${request.requestURI}$query, " +
+            "userId=${LogUserContext.currentUserId()}"
     }
 }

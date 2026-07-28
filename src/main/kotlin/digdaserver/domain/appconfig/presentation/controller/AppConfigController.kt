@@ -2,8 +2,10 @@ package digdaserver.domain.appconfig.presentation.controller
 
 import digdaserver.domain.appconfig.application.service.AppConfigService
 import digdaserver.domain.appconfig.presentation.dto.res.AppConfigResponse
+import digdaserver.global.infra.logging.LogUserContext.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -17,8 +19,14 @@ class AppConfigController(
     private val appConfigService: AppConfigService
 ) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     // 점검 모드 게이트가 로그인 전에도 조회해야 해서 인증 없이 열려 있다(SecurityConfig permitAll).
+    // 비로그인 호출이면 userId 는 `-` 로 찍힌다.
     @Operation(summary = "앱 운영 설정 조회", description = "대공지 노출/메시지 + 피드백 노출/URL + 점검 모드")
     @GetMapping
-    fun get(): ResponseEntity<AppConfigResponse> = ResponseEntity.ok(appConfigService.get())
+    fun get(): ResponseEntity<AppConfigResponse> {
+        log.info("api=GET /app-config, userId={}", currentUserId())
+        return ResponseEntity.ok(appConfigService.get())
+    }
 }

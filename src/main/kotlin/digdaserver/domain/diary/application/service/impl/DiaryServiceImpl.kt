@@ -40,6 +40,7 @@ import digdaserver.domain.upload.domain.repository.UploadedImageRepository
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.data.domain.PageRequest
@@ -137,7 +138,7 @@ class DiaryServiceImpl(
             log.info(
                 "action=일기 지역지도 집계(claim), groupRoomId={}, userId={}, since={}, regions={}",
                 groupRoomId,
-                userId,
+                UserLogKeyRegistry.of(userId),
                 membership.joinedAt,
                 regions.size
             )
@@ -316,7 +317,7 @@ class DiaryServiceImpl(
         diary.representative = true
         log.info(
             "action=일기 대표 썸네일 지정, userId={}, groupRoomId={}, diaryId={}, date={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             diaryId,
             diary.date
@@ -445,7 +446,7 @@ class DiaryServiceImpl(
 
         if (request.date.isAfter(todayKst())) throw DigdaException(ErrorCode.FUTURE_DATE_NOT_ALLOWED)
         if (request.date.isBefore(editableFrom())) {
-            log.info("action=일기 작성 거부(3개월 초과), userId={}, groupRoomId={}, date={}", userId, groupRoomId, request.date)
+            log.info("action=일기 작성 거부(3개월 초과), userId={}, groupRoomId={}, date={}", UserLogKeyRegistry.of(userId), groupRoomId, request.date)
             throw DigdaException(ErrorCode.DIARY_DATE_TOO_OLD)
         }
         validateWeather(request.weather)
@@ -455,7 +456,7 @@ class DiaryServiceImpl(
         // 인당 하루 1편 — 같은 그룹·같은 날짜에 '본인' 일기가 이미 있으면 거부.
         // (2.0.0: 그룹당 1편 → 인당 1편으로 완화. 다른 그룹원이 쓴 날에도 내 일기는 쓸 수 있다.)
         if (diaryRepository.existsByGroupRoomIdAndCreatedByIdAndDate(groupRoomId, userId, request.date)) {
-            log.info("action=일기 작성 거부(인당 하루 1편), userId={}, groupRoomId={}, date={}", userId, groupRoomId, request.date)
+            log.info("action=일기 작성 거부(인당 하루 1편), userId={}, groupRoomId={}, date={}", UserLogKeyRegistry.of(userId), groupRoomId, request.date)
             throw DigdaException(ErrorCode.DIARY_ALREADY_WRITTEN)
         }
 
@@ -532,7 +533,7 @@ class DiaryServiceImpl(
 
         // 3개월이 지난 일기는 잠금 — 기존 날짜가 창을 벗어났거나 그 이전으로 바꾸려 하면 거부.
         if (diary.date.isBefore(editableFrom())) {
-            log.info("action=일기 수정 거부(3개월 초과), userId={}, diaryId={}, date={}", userId, diaryId, diary.date)
+            log.info("action=일기 수정 거부(3개월 초과), userId={}, diaryId={}, date={}", UserLogKeyRegistry.of(userId), diaryId, diary.date)
             throw DigdaException(ErrorCode.DIARY_EDIT_WINDOW_EXPIRED)
         }
 
@@ -599,7 +600,7 @@ class DiaryServiceImpl(
 
         // 3개월이 지난 일기는 삭제도 잠근다(수정과 동일 정책).
         if (diary.date.isBefore(editableFrom())) {
-            log.info("action=일기 삭제 거부(3개월 초과), userId={}, diaryId={}, date={}", userId, diaryId, diary.date)
+            log.info("action=일기 삭제 거부(3개월 초과), userId={}, diaryId={}, date={}", UserLogKeyRegistry.of(userId), diaryId, diary.date)
             throw DigdaException(ErrorCode.DIARY_EDIT_WINDOW_EXPIRED)
         }
 
@@ -640,12 +641,12 @@ class DiaryServiceImpl(
         val alreadyLiked = diaryLikeRepository.existsByDiaryIdAndUserId(diaryId, userId)
         if (alreadyLiked) {
             diaryLikeRepository.deleteByDiaryIdAndUserId(diaryId, userId)
-            log.info("action=일기 좋아요 취소, userId={}, diaryId={}", userId, diaryId)
+            log.info("action=일기 좋아요 취소, userId={}, diaryId={}", UserLogKeyRegistry.of(userId), diaryId)
         } else {
             val user = userRepository.findById(userId)
                 .orElseThrow { DigdaException(ErrorCode.USER_NOT_FOUND) }
             diaryLikeRepository.save(DiaryLike(diary = diary, user = user))
-            log.info("action=일기 좋아요, userId={}, diaryId={}", userId, diaryId)
+            log.info("action=일기 좋아요, userId={}, diaryId={}", UserLogKeyRegistry.of(userId), diaryId)
         }
         val newCount = diaryLikeRepository.countByDiaryId(diaryId)
         return DiaryLikeResponse(likedByMe = !alreadyLiked, likeCount = newCount)
@@ -666,12 +667,12 @@ class DiaryServiceImpl(
         val exists = diaryReactionRepository.existsByDiaryIdAndUserIdAndType(diaryId, userId, type)
         if (exists) {
             diaryReactionRepository.deleteOne(diaryId, userId, type)
-            log.info("action=일기 리액션 취소, userId={}, diaryId={}, type={}", userId, diaryId, type)
+            log.info("action=일기 리액션 취소, userId={}, diaryId={}, type={}", UserLogKeyRegistry.of(userId), diaryId, type)
         } else {
             val user = userRepository.findById(userId)
                 .orElseThrow { DigdaException(ErrorCode.USER_NOT_FOUND) }
             diaryReactionRepository.save(DiaryReaction(diary = diary, user = user, type = type))
-            log.info("action=일기 리액션, userId={}, diaryId={}, type={}", userId, diaryId, type)
+            log.info("action=일기 리액션, userId={}, diaryId={}, type={}", UserLogKeyRegistry.of(userId), diaryId, type)
         }
 
         val reactions = buildReactionSummariesForOneDiary(diaryId, userId)

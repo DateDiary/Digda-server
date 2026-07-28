@@ -3,6 +3,7 @@ package digdaserver.domain.catchmind.presentation.controller
 import digdaserver.domain.catchmind.application.CatchmindService
 import digdaserver.domain.catchmind.presentation.dto.CatchmindGameResponse
 import digdaserver.domain.catchmind.presentation.dto.CreateCatchmindRequest
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -39,7 +40,7 @@ class CatchmindController(
     ): ResponseEntity<CatchmindGameResponse> {
         log.info(
             "api=POST /catchmind/games, userId={}, groupRoomId={}, invitees={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             request.inviteeUserIds.size
         )
@@ -60,7 +61,7 @@ class CatchmindController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<CatchmindGameResponse> {
-        log.info("api=GET /catchmind/games/{}, userId={}", gameId, userId)
+        log.info("api=GET /catchmind/games/{}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(catchmindService.getGame(UUID.fromString(userId), gameId))
     }
 
@@ -70,7 +71,7 @@ class CatchmindController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<CatchmindGameResponse> {
-        log.info("api=POST /catchmind/games/{}/join, userId={}", gameId, userId)
+        log.info("api=POST /catchmind/games/{}/join, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(catchmindService.join(UUID.fromString(userId), gameId))
     }
 
@@ -80,7 +81,7 @@ class CatchmindController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<CatchmindGameResponse> {
-        log.info("api=POST /catchmind/games/{}/decline, userId={}", gameId, userId)
+        log.info("api=POST /catchmind/games/{}/decline, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(catchmindService.decline(UUID.fromString(userId), gameId))
     }
 
@@ -90,7 +91,7 @@ class CatchmindController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<CatchmindGameResponse> {
-        log.info("api=POST /catchmind/games/{}/cancel, userId={}", gameId, userId)
+        log.info("api=POST /catchmind/games/{}/cancel, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(catchmindService.cancel(UUID.fromString(userId), gameId))
     }
 
@@ -100,7 +101,7 @@ class CatchmindController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<CatchmindGameResponse> {
-        log.info("api=POST /catchmind/games/{}/start, userId={}", gameId, userId)
+        log.info("api=POST /catchmind/games/{}/start, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(catchmindService.start(UUID.fromString(userId), gameId))
     }
 }

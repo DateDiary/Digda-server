@@ -1,5 +1,6 @@
 package digdaserver.global.config
 
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import digdaserver.global.jwt.util.JWTUtil
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Configuration
@@ -66,7 +67,10 @@ class WebSocketConfig(
                         null,
                         listOf(SimpleGrantedAuthority(role.key))
                     )
-                    log.info("action=ws_connect, userId={}", userId)
+                    // STOMP 프레임은 MDC 가 전파되지 않으므로, WS 컨트롤러가 UUID 로
+                    // 사람이 읽는 식별자를 되찾을 수 있게 캐시에 적재해둔다.
+                    UserLogKeyRegistry.put(userId, jwtUtil.getEmailOrNull(token))
+                    log.info("action=ws_connect, userId={}", UserLogKeyRegistry.of(userId))
                 }
                 return message
             }

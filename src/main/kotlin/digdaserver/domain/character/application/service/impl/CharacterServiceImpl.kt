@@ -16,6 +16,7 @@ import digdaserver.domain.membership.domain.repository.MembershipRepository
 import digdaserver.domain.notification.application.service.NotificationService
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
@@ -42,7 +43,7 @@ class CharacterServiceImpl(
         val equipped = groupCharacterEquippedRepository.findAllByGroupRoomId(groupRoomId)
         log.info(
             "action=character_get, userId={}, groupRoomId={}, stage={}, level={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             character.stage,
             character.level
@@ -69,7 +70,7 @@ class CharacterServiceImpl(
         log.info(
             "action=character_gain_exp, userId={}, groupRoomId={}, amount={}, coinDelta={}, " +
                 "source={}, level={}, stage={}, levelGained={}, stageChanged={}",
-            userId, groupRoomId, amount, coinDelta, source,
+            UserLogKeyRegistry.of(userId), groupRoomId, amount, coinDelta, source,
             character.level, character.stage, result.levelGained, result.stageChanged
         )
 
@@ -127,7 +128,7 @@ class CharacterServiceImpl(
 
         log.info(
             "action=character_master_game_start, userId={}, groupRoomId={}, fee={}, balanceAfter={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             MASTER_GAME_ENTRY_FEE,
             character.coin
@@ -169,7 +170,7 @@ class CharacterServiceImpl(
         log.info(
             "action=character_master_game_reward, userId={}, groupRoomId={}, score={}, " +
                 "tier={}, coinReward={}, evolvedToMaster={}, balanceAfter={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             score,
             tier,
@@ -221,7 +222,7 @@ class CharacterServiceImpl(
         val remaining = (AD_REWARD_DAILY_CAP - character.adRewardCount).coerceAtLeast(0)
         log.info(
             "action=character_ad_reward, userId={}, groupRoomId={}, coin={}, remaining={}, balanceAfter={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             AD_REWARD_COIN,
             remaining,

@@ -1,8 +1,10 @@
 package digdaserver.domain.oauth2.presentation.controller
 
 import digdaserver.domain.oauth2.application.service.AccountService
+import digdaserver.global.infra.logging.LogUserContext.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -17,12 +19,16 @@ class AccountController(
     private val accountService: AccountService
 ) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Operation(summary = "회원 탈퇴", description = "계정 영구 삭제. 소유 중인 그룹이 있으면 먼저 양도 필요.")
     @DeleteMapping("/account")
     fun deleteAccount(
         @AuthenticationPrincipal userId: String
     ): ResponseEntity<Void> {
+        log.info("api=DELETE /auth/account, userId={}", currentUserId())
         accountService.deleteAccount(UUID.fromString(userId))
+        log.info("api=DELETE /auth/account 완료, userId={}", currentUserId())
         return ResponseEntity.ok().build()
     }
 }

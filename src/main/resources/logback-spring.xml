@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  로그 구성.
+
+  기본 동작(콘솔 + /logs/digda.log 날짜 롤오버)은 Spring Boot 기본 appender 를 그대로
+  가져다 쓴다. application-prod.yml 의 logging.file.name / logging.logback.rollingpolicy.*
+  설정이 그대로 살아있으므로, 기존 운영 동작은 이 파일 추가 전후로 동일하다.
+
+  여기서 추가하는 건 하나뿐: 사용자별 로그 파일(USER_FILES).
+
+    /logs/digda.log                                  <- 전체 로그(기존 그대로)
+    /logs/digda.2026-07-27.0.log.gz
+    /logs/users/chltmdgh522/digda.log                <- 사용자별(신규)
+    /logs/users/chltmdgh522/digda.2026-07-27.0.log.gz
+    /logs/users/unknown/                             <- 비로그인·어드민 트래픽
+
+  폴더명은 MDC 의 userLogKey(= 이메일 앞부분)이며 DigdaJWTFilter 가 요청마다 바인딩하고
+  ApiAccessLogFilter 가 응답 후 비운다. (LogUserContext 참고)
+-->
+<configuration>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!--
+      파일 로그는 운영(prod)에서만. dev 는 logging.file.name 이 없어서 stdout 만 쓴다.
+    -->
+    <springProfile name="prod">
+
+        <include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
+
+        <appender name="USER_FILES" class="ch.qos.logback.classic.sift.SiftingAppender">
+
+            <discriminator>
+                <key>userLogKey</key>
+                <!-- 비로그인 요청·어드민 트래픽이 모이는 곳. -->
+                <defaultValue>unknown</defaultValue>
+            </discriminator>
+
+            <!--
+              동시에 열어두는 사용자 파일 수 상한. 초과하면 가장 오래 안 쓰인 것부터 닫는다.
+              파일 디스크립터가 사용자 수만큼 늘어나는 걸 막는 안전장치.
+            -->
+            <maxAppenderCount>200</maxAppenderCount>
+
+            <!-- 30분간 로그가 없는 사용자의 파일은 닫는다(파일은 남고 핸들만 해제). -->
+            <timeout>30 minutes</timeout>
+
+            <sift>
+                <appender name="USER-${userLogKey}"
+                          class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+                    <file>/logs/users/${userLogKey}/digda.log</file>
+
+                    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                        <!-- 메인 로그와 동일하게 지난 날짜분은 gz 압축(평문 대비 약 1/10). -->
+                        <fileNamePattern>/logs/users/${userLogKey}/digda.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                        <!-- 메인 로그와 동일한 30일 슬라이딩 보관. -->
+                        <maxHistory>30</maxHistory>
+                        <!-- 한 사용자가 하루에 5MB 넘게 찍으면 .0/.1 로 쪼갠다. -->
+                        <maxFileSize>5MB</maxFileSize>
+                        <!--
+                          사용자 1명당 총량 상한. 사용자 수 × 30MB 가 이론상 최대치이므로
+                          이 값이 곧 디스크 방어선이다. 넘으면 오래된 것부터 삭제된다.
+                        -->
+                        <totalSizeCap>30MB</totalSizeCap>
+                    </rollingPolicy>
+
+                    <encoder>
+                        <pattern>${FILE_LOG_PATTERN}</pattern>
+                        <charset>${FILE_LOG_CHARSET}</charset>
+                    </encoder>
+                </appender>
+            </sift>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="USER_FILES"/>
+        </root>
+    </springProfile>
+
+</configuration>

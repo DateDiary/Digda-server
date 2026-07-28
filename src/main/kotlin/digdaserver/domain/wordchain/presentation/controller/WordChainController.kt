@@ -3,6 +3,7 @@ package digdaserver.domain.wordchain.presentation.controller
 import digdaserver.domain.wordchain.application.WordChainService
 import digdaserver.domain.wordchain.presentation.dto.CreateWordChainRequest
 import digdaserver.domain.wordchain.presentation.dto.WordChainResponse
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -39,7 +40,7 @@ class WordChainController(
     ): ResponseEntity<WordChainResponse> {
         log.info(
             "api=POST /wordchain/games, userId={}, groupRoomId={}, invitees={}, turnSeconds={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             request.inviteeUserIds.size,
             request.turnSeconds
@@ -60,7 +61,7 @@ class WordChainController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<WordChainResponse> {
-        log.info("api=GET /wordchain/games/{}, userId={}", gameId, userId)
+        log.info("api=GET /wordchain/games/{}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(wordChainService.getGame(UUID.fromString(userId), gameId))
     }
 
@@ -70,7 +71,7 @@ class WordChainController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<WordChainResponse> {
-        log.info("api=POST /wordchain/games/{}/join, userId={}", gameId, userId)
+        log.info("api=POST /wordchain/games/{}/join, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(wordChainService.join(UUID.fromString(userId), gameId))
     }
 
@@ -80,7 +81,7 @@ class WordChainController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<WordChainResponse> {
-        log.info("api=POST /wordchain/games/{}/decline, userId={}", gameId, userId)
+        log.info("api=POST /wordchain/games/{}/decline, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(wordChainService.decline(UUID.fromString(userId), gameId))
     }
 
@@ -90,7 +91,7 @@ class WordChainController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<WordChainResponse> {
-        log.info("api=POST /wordchain/games/{}/cancel, userId={}", gameId, userId)
+        log.info("api=POST /wordchain/games/{}/cancel, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(wordChainService.cancel(UUID.fromString(userId), gameId))
     }
 
@@ -100,7 +101,7 @@ class WordChainController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<WordChainResponse> {
-        log.info("api=POST /wordchain/games/{}/start, userId={}", gameId, userId)
+        log.info("api=POST /wordchain/games/{}/start, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(wordChainService.start(UUID.fromString(userId), gameId))
     }
 }

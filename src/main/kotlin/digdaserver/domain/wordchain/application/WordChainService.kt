@@ -9,6 +9,7 @@ import digdaserver.domain.wordchain.presentation.dto.WordChainEvent
 import digdaserver.domain.wordchain.presentation.dto.WordChainResponse
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -77,21 +78,21 @@ class WordChainService(
     fun join(userId: UUID, gameId: Long): WordChainResponse {
         val game = gameManager.get(gameId)
         game.join(userId)
-        log.info("action=wordchain_join, gameId={}, userId={}", gameId, userId)
+        log.info("action=wordchain_join, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, WordChainEvent.Type.PLAYER_JOINED)
     }
 
     fun decline(userId: UUID, gameId: Long): WordChainResponse {
         val game = gameManager.get(gameId)
         game.decline(userId)
-        log.info("action=wordchain_decline, gameId={}, userId={}", gameId, userId)
+        log.info("action=wordchain_decline, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, WordChainEvent.Type.PLAYER_DECLINED)
     }
 
     fun cancel(userId: UUID, gameId: Long): WordChainResponse {
         val game = gameManager.get(gameId)
         game.cancel(userId)
-        log.info("action=wordchain_cancel, gameId={}, userId={}", gameId, userId)
+        log.info("action=wordchain_cancel, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, WordChainEvent.Type.CANCELED)
     }
 
@@ -117,7 +118,7 @@ class WordChainService(
                 log.info(
                     "action=wordchain_word, gameId={}, userId={}, word={}",
                     gameId,
-                    userId,
+                    UserLogKeyRegistry.of(userId),
                     word.trim()
                 )
                 messagingTemplate.convertAndSend(
@@ -149,7 +150,7 @@ class WordChainService(
     fun forfeit(userId: UUID, gameId: Long) {
         val game = gameManager.get(gameId)
         game.forfeit(userId)
-        log.info("action=wordchain_forfeit, gameId={}, userId={}", gameId, userId)
+        log.info("action=wordchain_forfeit, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         if (game.status == WordChainGame.Status.FINISHED) {
             broadcast(game, WordChainEvent.Type.FINISHED)
         } else {
