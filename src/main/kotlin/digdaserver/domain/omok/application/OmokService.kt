@@ -9,6 +9,7 @@ import digdaserver.domain.omok.presentation.dto.OmokGameResponse
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -81,21 +82,21 @@ class OmokService(
     fun accept(userId: UUID, gameId: Long): OmokGameResponse {
         val game = gameManager.get(gameId)
         game.accept(userId)
-        log.info("action=omok_accept, gameId={}, userId={}", gameId, userId)
+        log.info("action=omok_accept, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, OmokEvent.Type.ACCEPTED)
     }
 
     fun decline(userId: UUID, gameId: Long): OmokGameResponse {
         val game = gameManager.get(gameId)
         game.decline(userId)
-        log.info("action=omok_decline, gameId={}, userId={}", gameId, userId)
+        log.info("action=omok_decline, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, OmokEvent.Type.DECLINED)
     }
 
     fun cancel(userId: UUID, gameId: Long): OmokGameResponse {
         val game = gameManager.get(gameId)
         game.cancel(userId)
-        log.info("action=omok_cancel, gameId={}, userId={}", gameId, userId)
+        log.info("action=omok_cancel, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, OmokEvent.Type.CANCELED)
     }
 
@@ -107,7 +108,7 @@ class OmokService(
         log.info(
             "action=omok_move, gameId={}, userId={}, x={}, y={}, finished={}",
             gameId,
-            userId,
+            UserLogKeyRegistry.of(userId),
             x,
             y,
             outcome.finished
@@ -119,7 +120,7 @@ class OmokService(
     fun forfeit(userId: UUID, gameId: Long) {
         val game = gameManager.get(gameId)
         game.forfeit(userId)
-        log.info("action=omok_forfeit, gameId={}, userId={}", gameId, userId)
+        log.info("action=omok_forfeit, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         broadcast(game, OmokEvent.Type.FINISHED)
     }
 

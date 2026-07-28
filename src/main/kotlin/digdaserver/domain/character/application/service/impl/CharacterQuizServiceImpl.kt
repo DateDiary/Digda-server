@@ -20,6 +20,7 @@ import digdaserver.domain.notification.application.service.NotificationService
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.data.domain.PageRequest
@@ -93,7 +94,7 @@ class CharacterQuizServiceImpl(
         )
         log.info(
             "action=character_quiz_create, userId={}, quizId={}, groupRoomId={}, category={}, multiplier={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             quiz.id,
             request.groupRoomId,
             request.category,
@@ -166,7 +167,7 @@ class CharacterQuizServiceImpl(
         val picked = candidates.random()
         log.info(
             "action=character_quiz_pick, userId={}, quizId={}, groupRoomId={}, excludeImage={}, remaining={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             picked.id,
             groupRoomId,
             excludeImage,
@@ -260,7 +261,7 @@ class CharacterQuizServiceImpl(
         log.info(
             "action=character_quiz_attempt, userId={}, groupRoomId={}, quizId={}, selected={}, " +
                 "correct={}, earnedExp={}, earnedCoin={}, levelGained={}, stageChanged={}",
-            userId, quiz.groupRoom.id, quizId, selectedIndex,
+            UserLogKeyRegistry.of(userId), quiz.groupRoom.id, quizId, selectedIndex,
             correct, earnedExp, earnedCoin, gain.levelGained, gain.stageChanged
         )
 

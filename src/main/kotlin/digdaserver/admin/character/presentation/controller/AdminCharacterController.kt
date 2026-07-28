@@ -7,7 +7,6 @@ import digdaserver.admin.common.dto.res.AdminPageResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -30,8 +29,6 @@ class AdminCharacterController(
     private val adminCharacterService: AdminCharacterService
 ) {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     @Operation(summary = "모찌 목록 조회", description = "키워드(그룹방 이름/방장 이름), 삭제 포함 여부, 페이지네이션")
     @GetMapping
     fun search(
@@ -40,12 +37,6 @@ class AdminCharacterController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int
     ): ResponseEntity<AdminPageResponse<AdminCharacterResponse>> {
-        log.info(
-            "api=GET /api/admin/characters, keyword={}, includeDeletedGroups={}, page={}",
-            keyword,
-            includeDeletedGroups,
-            page
-        )
         return ResponseEntity.ok(
             adminCharacterService.search(keyword, includeDeletedGroups, page, size)
         )
@@ -68,13 +59,6 @@ class AdminCharacterController(
         @RequestBody
         request: AdminUpdateCharacterRequest
     ): ResponseEntity<AdminCharacterResponse> {
-        log.info(
-            "api=PATCH /api/admin/characters/{}, level={}, coin={}, dikoUnlocked={}",
-            groupRoomId,
-            request.level,
-            request.coin,
-            request.dikoUnlocked
-        )
         return ResponseEntity.ok(adminCharacterService.update(groupRoomId, request))
     }
 }

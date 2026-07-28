@@ -5,6 +5,7 @@ import digdaserver.domain.alkkagi.domain.AlkkagiGame
 import digdaserver.domain.alkkagi.presentation.dto.AcceptAlkkagiGameRequest
 import digdaserver.domain.alkkagi.presentation.dto.AlkkagiGameResponse
 import digdaserver.domain.alkkagi.presentation.dto.CreateAlkkagiGameRequest
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -45,7 +46,7 @@ class AlkkagiController(
     ): ResponseEntity<AlkkagiGameResponse> {
         log.info(
             "api=POST /alkkagi/games, userId={}, groupRoomId={}, inviteeUserId={}, stoneCount={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             request.inviteeUserId,
             request.stoneCount
@@ -67,7 +68,7 @@ class AlkkagiController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<AlkkagiGameResponse> {
-        log.info("api=GET /alkkagi/games/{}, userId={}", gameId, userId)
+        log.info("api=GET /alkkagi/games/{}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(alkkagiService.getGame(UUID.fromString(userId), gameId))
     }
 
@@ -84,7 +85,7 @@ class AlkkagiController(
         log.info(
             "api=POST /alkkagi/games/{}/accept, userId={}, formation={}",
             gameId,
-            userId,
+            UserLogKeyRegistry.of(userId),
             request?.formation
         )
         return ResponseEntity.ok(
@@ -102,7 +103,7 @@ class AlkkagiController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<AlkkagiGameResponse> {
-        log.info("api=POST /alkkagi/games/{}/decline, userId={}", gameId, userId)
+        log.info("api=POST /alkkagi/games/{}/decline, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(alkkagiService.decline(UUID.fromString(userId), gameId))
     }
 
@@ -112,7 +113,7 @@ class AlkkagiController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<AlkkagiGameResponse> {
-        log.info("api=POST /alkkagi/games/{}/cancel, userId={}", gameId, userId)
+        log.info("api=POST /alkkagi/games/{}/cancel, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(alkkagiService.cancel(UUID.fromString(userId), gameId))
     }
 }

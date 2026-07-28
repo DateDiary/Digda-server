@@ -2,6 +2,7 @@ package digdaserver.domain.tapbattle.presentation.controller
 
 import digdaserver.domain.tapbattle.application.TapBattleService
 import digdaserver.domain.tapbattle.presentation.dto.TapReportRequest
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
@@ -30,7 +31,7 @@ class TapBattleWsController(
             log.warn(
                 "action=tapbattle_taps_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }
@@ -44,7 +45,7 @@ class TapBattleWsController(
             log.warn(
                 "action=tapbattle_forfeit_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }

@@ -2,6 +2,7 @@ package digdaserver.domain.wordchain.presentation.controller
 
 import digdaserver.domain.wordchain.application.WordChainService
 import digdaserver.domain.wordchain.presentation.dto.WordSubmitRequest
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
@@ -30,7 +31,7 @@ class WordChainWsController(
             log.warn(
                 "action=wordchain_word_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }
@@ -44,7 +45,7 @@ class WordChainWsController(
             log.warn(
                 "action=wordchain_forfeit_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }

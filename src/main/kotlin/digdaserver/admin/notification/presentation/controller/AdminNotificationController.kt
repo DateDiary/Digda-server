@@ -6,7 +6,6 @@ import digdaserver.admin.notification.presentation.dto.res.AdminNotificationResp
 import digdaserver.domain.notification.domain.entity.NotificationType
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -26,8 +25,6 @@ import org.springframework.web.bind.annotation.RestController
 class AdminNotificationController(
     private val adminNotificationService: AdminNotificationService
 ) {
-
-    private val log = LoggerFactory.getLogger(javaClass)
 
     @Operation(
         summary = "알림 목록 조회",
@@ -50,13 +47,6 @@ class AdminNotificationController(
             }
             ?.toSet()
             ?.takeIf { it.isNotEmpty() }
-        log.info(
-            "api=GET /api/admin/notifications, types={}, groupRoomId={}, keyword={}, page={}",
-            types,
-            groupRoomId,
-            keyword,
-            page
-        )
         return ResponseEntity.ok(
             adminNotificationService.search(types, groupRoomId, keyword, page, size)
         )

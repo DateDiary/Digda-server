@@ -4,6 +4,7 @@ import digdaserver.domain.device.domain.repository.DeviceRepository
 import digdaserver.domain.log.application.service.UserActionLogService
 import digdaserver.domain.log.domain.entity.UserAction
 import digdaserver.domain.oauth2.application.service.LogoutService
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import digdaserver.global.jwt.domain.repository.JsonWebTokenRepository
 import digdaserver.global.jwt.domain.repository.SocialTokenRepository
 import jakarta.transaction.Transactional
@@ -39,6 +40,6 @@ class LogoutServiceImpl(
             detail = null
         )
 
-        log.info("사용자 로그아웃 완료: userId={}", userId)
+        log.info("사용자 로그아웃 완료: userId={}", UserLogKeyRegistry.of(userId))
     }
 }

@@ -6,6 +6,7 @@ import digdaserver.domain.character.presentation.dto.req.SubmitAttemptRequest
 import digdaserver.domain.character.presentation.dto.res.CharacterQuizListResponse
 import digdaserver.domain.character.presentation.dto.res.CharacterQuizResponse
 import digdaserver.domain.character.presentation.dto.res.QuizAttemptResultResponse
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -38,7 +39,7 @@ class CharacterQuizController(
     ): ResponseEntity<CharacterQuizResponse> {
         log.info(
             "api=POST /character-quizzes, userId={}, groupRoomId={}, category={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             request.groupRoomId,
             request.category
         )
@@ -54,7 +55,7 @@ class CharacterQuizController(
         @RequestParam(required = false, defaultValue = "0") page: Int,
         @RequestParam(required = false, defaultValue = "20") size: Int
     ): ResponseEntity<CharacterQuizListResponse> {
-        log.info("api=GET /character-quizzes, userId={}, groupRoomId={}, page={}", userId, groupRoomId, page)
+        log.info("api=GET /character-quizzes, userId={}, groupRoomId={}, page={}", UserLogKeyRegistry.of(userId), groupRoomId, page)
         return ResponseEntity.ok(
             characterQuizService.listQuizzes(UUID.fromString(userId), groupRoomId, page, size)
         )
@@ -66,7 +67,7 @@ class CharacterQuizController(
         @AuthenticationPrincipal userId: String,
         @RequestParam groupRoomId: Long
     ): ResponseEntity<CharacterQuizResponse> {
-        log.info("api=GET /character-quizzes/random, userId={}, groupRoomId={}", userId, groupRoomId)
+        log.info("api=GET /character-quizzes/random, userId={}, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
         return ResponseEntity.ok(
             characterQuizService.pickRandom(UUID.fromString(userId), groupRoomId)
         )
@@ -82,7 +83,7 @@ class CharacterQuizController(
         log.info(
             "api=POST /character-quizzes/{}/attempt, userId={}, selected={}",
             quizId,
-            userId,
+            UserLogKeyRegistry.of(userId),
             request.selectedIndex
         )
         return ResponseEntity.ok(

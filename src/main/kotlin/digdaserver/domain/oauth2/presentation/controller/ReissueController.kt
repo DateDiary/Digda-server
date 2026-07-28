@@ -7,6 +7,7 @@ import digdaserver.domain.oauth2.presentation.dto.res.RefreshResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -18,6 +19,8 @@ class ReissueController(
     private val reissueService: ReissueService
 ) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Operation(summary = "토큰 갱신", description = "Refresh Token으로 새로운 Access/Refresh Token을 발급합니다. (Rotation 적용)")
     @PostMapping("/auth/refresh")
     fun refresh(
@@ -25,7 +28,10 @@ class ReissueController(
         @RequestBody
         request: RefreshRequest
     ): ResponseEntity<RefreshResponse> {
+        // 갱신 전에는 인증 컨텍스트가 없어 userId 를 알 수 없다. 토큰 값은 절대 남기지 않는다.
+        log.info("api=POST /auth/refresh, userId=-")
         val loginToken = reissueService.reissue(request.refreshToken)
+        log.info("api=POST /auth/refresh 완료, userId=-, rotated={}", loginToken.refreshToken.isNotBlank())
         return ResponseEntity.ok(
             RefreshResponse(
                 accessToken = loginToken.accessToken,
@@ -37,7 +43,9 @@ class ReissueController(
     @Operation(summary = "[기존 호환] 토큰 재발급", description = "기존 호환용 토큰 재발급 API")
     @PostMapping("/api/app/reissue")
     fun reissueApp(@RequestBody request: RefreshRequest): ResponseEntity<LoginToken> {
+        log.info("api=POST /api/app/reissue, userId=-")
         val loginToken = reissueService.reissue(request.refreshToken)
+        log.info("api=POST /api/app/reissue 완료, userId=-, rotated={}", loginToken.refreshToken.isNotBlank())
         return ResponseEntity.ok(loginToken)
     }
 }

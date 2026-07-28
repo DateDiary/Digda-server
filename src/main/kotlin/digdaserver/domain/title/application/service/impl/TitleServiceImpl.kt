@@ -15,6 +15,7 @@ import digdaserver.domain.title.presentation.dto.res.TitleCatalogResponse
 import digdaserver.domain.title.presentation.dto.res.TitleResponse
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -69,7 +70,7 @@ class TitleServiceImpl(
                 ) {
                     log.info(
                         "action=지역 칭호 소급 차단, userId={}, groupRoomId={}, code={}, joinedAt={}",
-                        userId,
+                        UserLogKeyRegistry.of(userId),
                         groupId,
                         code,
                         membership.joinedAt

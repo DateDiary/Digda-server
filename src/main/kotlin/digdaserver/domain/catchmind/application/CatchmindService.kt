@@ -10,6 +10,7 @@ import digdaserver.domain.notification.application.service.NotificationService
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -82,7 +83,7 @@ class CatchmindService(
     fun join(userId: UUID, gameId: Long): CatchmindGameResponse {
         val game = gameManager.get(gameId)
         game.join(userId)
-        log.info("action=catchmind_join, gameId={}, userId={}", gameId, userId)
+        log.info("action=catchmind_join, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         broadcastSnapshot(game, CatchmindEvent.Type.PLAYER_JOINED)
         return CatchmindGameResponse.from(game, userId, includeStrokes = true)
     }
@@ -90,7 +91,7 @@ class CatchmindService(
     fun decline(userId: UUID, gameId: Long): CatchmindGameResponse {
         val game = gameManager.get(gameId)
         game.decline(userId)
-        log.info("action=catchmind_decline, gameId={}, userId={}", gameId, userId)
+        log.info("action=catchmind_decline, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         broadcastSnapshot(game, CatchmindEvent.Type.PLAYER_DECLINED)
         return CatchmindGameResponse.from(game, userId)
     }
@@ -98,7 +99,7 @@ class CatchmindService(
     fun cancel(userId: UUID, gameId: Long): CatchmindGameResponse {
         val game = gameManager.get(gameId)
         game.cancel(userId)
-        log.info("action=catchmind_cancel, gameId={}, userId={}", gameId, userId)
+        log.info("action=catchmind_cancel, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         broadcastSnapshot(game, CatchmindEvent.Type.CANCELED)
         return CatchmindGameResponse.from(game, userId)
     }
@@ -167,7 +168,7 @@ class CatchmindService(
                 "action=catchmind_correct, gameId={}, round={}, userId={}",
                 gameId,
                 game.roundIndex,
-                userId
+                UserLogKeyRegistry.of(userId)
             )
             messagingTemplate.convertAndSend(
                 topic(game.id),

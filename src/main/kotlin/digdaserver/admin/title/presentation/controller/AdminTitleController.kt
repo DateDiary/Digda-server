@@ -7,7 +7,6 @@ import digdaserver.domain.title.presentation.dto.res.TitleCatalogResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -29,8 +28,6 @@ class AdminTitleController(
     private val adminTitleService: AdminTitleService
 ) {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     @Operation(summary = "칭호 카탈로그 조회", description = "부여 가능한 전체 칭호 목록")
     @GetMapping("/catalog")
     fun catalog(): ResponseEntity<List<TitleCatalogResponse>> =
@@ -47,7 +44,6 @@ class AdminTitleController(
         @Valid @RequestBody
         request: GrantTitleRequest
     ): ResponseEntity<List<AdminUserTitleResponse>> {
-        log.info("api=POST /api/admin/titles/grant, userId={}, code={}", request.userId, request.code)
         return ResponseEntity.ok(adminTitleService.grant(request.userId, request.code))
     }
 
@@ -57,7 +53,6 @@ class AdminTitleController(
         @PathVariable userId: UUID,
         @PathVariable code: String
     ): ResponseEntity<List<AdminUserTitleResponse>> {
-        log.info("api=DELETE /api/admin/titles/users/{}/{}", userId, code)
         return ResponseEntity.ok(adminTitleService.revoke(userId, code))
     }
 }

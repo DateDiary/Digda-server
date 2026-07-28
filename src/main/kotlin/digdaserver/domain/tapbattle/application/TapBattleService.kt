@@ -9,6 +9,7 @@ import digdaserver.domain.tapbattle.presentation.dto.TapBattleResponse
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -73,21 +74,21 @@ class TapBattleService(
     fun accept(userId: UUID, gameId: Long): TapBattleResponse {
         val game = gameManager.get(gameId)
         game.accept(userId)
-        log.info("action=tapbattle_accept, gameId={}, userId={}", gameId, userId)
+        log.info("action=tapbattle_accept, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, TapBattleEvent.Type.ACCEPTED)
     }
 
     fun decline(userId: UUID, gameId: Long): TapBattleResponse {
         val game = gameManager.get(gameId)
         game.decline(userId)
-        log.info("action=tapbattle_decline, gameId={}, userId={}", gameId, userId)
+        log.info("action=tapbattle_decline, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, TapBattleEvent.Type.DECLINED)
     }
 
     fun cancel(userId: UUID, gameId: Long): TapBattleResponse {
         val game = gameManager.get(gameId)
         game.cancel(userId)
-        log.info("action=tapbattle_cancel, gameId={}, userId={}", gameId, userId)
+        log.info("action=tapbattle_cancel, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, TapBattleEvent.Type.CANCELED)
     }
 
@@ -113,7 +114,7 @@ class TapBattleService(
     fun forfeit(userId: UUID, gameId: Long) {
         val game = gameManager.get(gameId)
         game.forfeit(userId)
-        log.info("action=tapbattle_forfeit, gameId={}, userId={}", gameId, userId)
+        log.info("action=tapbattle_forfeit, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         broadcast(game, TapBattleEvent.Type.FINISHED)
     }
 

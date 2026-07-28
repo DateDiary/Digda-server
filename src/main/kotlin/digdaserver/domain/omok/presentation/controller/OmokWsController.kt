@@ -2,6 +2,7 @@ package digdaserver.domain.omok.presentation.controller
 
 import digdaserver.domain.omok.application.OmokService
 import digdaserver.domain.omok.presentation.dto.OmokMoveRequest
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
@@ -36,7 +37,7 @@ class OmokWsController(
             log.warn(
                 "action=omok_move_rejected, gameId={}, userId={}, x={}, y={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 request.x,
                 request.y,
                 e.message
@@ -55,7 +56,7 @@ class OmokWsController(
             log.warn(
                 "action=omok_forfeit_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }

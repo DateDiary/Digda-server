@@ -8,6 +8,7 @@ import digdaserver.domain.inquiry.presentation.dto.res.InquiryResponse
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -40,7 +41,7 @@ class InquiryServiceImpl(
         if (todayCount >= dailyLimit) {
             log.info(
                 "action=고객센터 문의 한도 초과, userId={}, todayCount={}",
-                userId,
+                UserLogKeyRegistry.of(userId),
                 todayCount
             )
             throw DigdaException(ErrorCode.INQUIRY_DAILY_LIMIT)
@@ -49,7 +50,7 @@ class InquiryServiceImpl(
         val saved = inquiryRepository.save(Inquiry(user = user, content = content))
         log.info(
             "action=고객센터 문의 접수, userId={}, inquiryId={}, todayCount={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             saved.id,
             todayCount + 1
         )

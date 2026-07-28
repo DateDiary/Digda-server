@@ -9,6 +9,7 @@ import digdaserver.domain.tapbattle.application.TapBattleGameManager
 import digdaserver.domain.wordchain.application.WordChainGameManager
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -62,7 +63,7 @@ class GameInviteController(
         @AuthenticationPrincipal userId: String,
         @RequestParam groupRoomId: Long
     ): ResponseEntity<GameInvitesResponse> {
-        log.info("api=GET /games/invites, userId={}, groupRoomId={}", userId, groupRoomId)
+        log.info("api=GET /games/invites, userId={}, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
         val uid = UUID.fromString(userId)
         validateGroupMember(groupRoomId, uid)
 

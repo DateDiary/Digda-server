@@ -7,6 +7,7 @@ import digdaserver.domain.character.presentation.dto.res.CharacterShopResponse
 import digdaserver.domain.character.presentation.dto.res.CharacterStateResponse
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -38,7 +39,7 @@ class CharacterShopController(
         @AuthenticationPrincipal userId: String,
         @RequestParam groupRoomId: Long
     ): ResponseEntity<CharacterShopResponse> {
-        log.info("api=GET /character/shop, userId={}, groupRoomId={}", userId, groupRoomId)
+        log.info("api=GET /character/shop, userId={}, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
         return ResponseEntity.ok(
             shopService.getShop(UUID.fromString(userId), groupRoomId)
         )
@@ -57,7 +58,7 @@ class CharacterShopController(
         log.info(
             "api=POST /character/shop/items/{}/buy, userId={}, groupRoomId={}",
             itemKey,
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId
         )
         return ResponseEntity.ok(
@@ -77,7 +78,7 @@ class CharacterShopController(
     ): ResponseEntity<CharacterStateResponse> {
         log.info(
             "api=PUT /character/shop/equip, userId={}, groupRoomId={}, itemKey={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             request.itemKey
         )
@@ -99,7 +100,7 @@ class CharacterShopController(
         log.info(
             "api=DELETE /character/shop/equip/{}, userId={}, groupRoomId={}",
             itemType,
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId
         )
         val type = ShopItemType.safeValueOf(itemType.uppercase())

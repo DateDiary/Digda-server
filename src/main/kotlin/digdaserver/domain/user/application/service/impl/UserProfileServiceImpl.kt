@@ -7,6 +7,7 @@ import digdaserver.domain.user.presentation.dto.req.UpdateProfileRequest
 import digdaserver.domain.user.presentation.dto.res.MyProfileResponse
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -37,7 +38,7 @@ class UserProfileServiceImpl(
     }
 
     override fun getMyProfile(userId: UUID): MyProfileResponse {
-        log.info("userId={}, action=내 프로필 조회", userId)
+        log.info("userId={}, action=내 프로필 조회", UserLogKeyRegistry.of(userId))
         val user = userRepository.findById(userId)
             .orElseThrow { DigdaException(ErrorCode.USER_NOT_FOUND) }
 
@@ -48,7 +49,7 @@ class UserProfileServiceImpl(
     override fun updateProfile(userId: UUID, request: UpdateProfileRequest): MyProfileResponse {
         log.info(
             "userId={}, action=프로필 수정 요청, fields=[name={}, profileImageId={}]",
-            userId,
+            UserLogKeyRegistry.of(userId),
             request.name,
             request.profileImageId
         )
@@ -73,7 +74,7 @@ class UserProfileServiceImpl(
                 } else {
                     log.warn(
                         "userId={}, action=프로필 이미지 변경 무시(업로드 lookup 실패), imageId={}",
-                        userId,
+                        UserLogKeyRegistry.of(userId),
                         optional.get()
                     )
                 }
@@ -82,7 +83,7 @@ class UserProfileServiceImpl(
             }
         }
 
-        log.info("userId={}, action=프로필 수정 완료, profileImage={}", userId, user.profileImage)
+        log.info("userId={}, action=프로필 수정 완료, profileImage={}", UserLogKeyRegistry.of(userId), user.profileImage)
         return MyProfileResponse.from(user)
     }
 }

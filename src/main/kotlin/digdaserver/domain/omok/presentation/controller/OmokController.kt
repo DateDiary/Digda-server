@@ -3,6 +3,7 @@ package digdaserver.domain.omok.presentation.controller
 import digdaserver.domain.omok.application.OmokService
 import digdaserver.domain.omok.presentation.dto.CreateOmokGameRequest
 import digdaserver.domain.omok.presentation.dto.OmokGameResponse
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -39,7 +40,7 @@ class OmokController(
     ): ResponseEntity<OmokGameResponse> {
         log.info(
             "api=POST /omok/games, userId={}, groupRoomId={}, inviteeUserId={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             request.inviteeUserId
         )
@@ -54,7 +55,7 @@ class OmokController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<OmokGameResponse> {
-        log.info("api=GET /omok/games/{}, userId={}", gameId, userId)
+        log.info("api=GET /omok/games/{}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(omokService.getGame(UUID.fromString(userId), gameId))
     }
 
@@ -64,7 +65,7 @@ class OmokController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<OmokGameResponse> {
-        log.info("api=POST /omok/games/{}/accept, userId={}", gameId, userId)
+        log.info("api=POST /omok/games/{}/accept, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(omokService.accept(UUID.fromString(userId), gameId))
     }
 
@@ -74,7 +75,7 @@ class OmokController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<OmokGameResponse> {
-        log.info("api=POST /omok/games/{}/decline, userId={}", gameId, userId)
+        log.info("api=POST /omok/games/{}/decline, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(omokService.decline(UUID.fromString(userId), gameId))
     }
 
@@ -84,7 +85,7 @@ class OmokController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<OmokGameResponse> {
-        log.info("api=POST /omok/games/{}/cancel, userId={}", gameId, userId)
+        log.info("api=POST /omok/games/{}/cancel, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(omokService.cancel(UUID.fromString(userId), gameId))
     }
 }

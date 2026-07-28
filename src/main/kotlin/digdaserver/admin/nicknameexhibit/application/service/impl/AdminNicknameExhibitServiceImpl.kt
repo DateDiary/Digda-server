@@ -13,7 +13,6 @@ import digdaserver.domain.nickname_exhibit.domain.repository.NicknameExhibitRepo
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -27,8 +26,6 @@ class AdminNicknameExhibitServiceImpl(
     private val nicknameExhibitAccessRepository: NicknameExhibitAccessRepository,
     private val userRepository: UserRepository
 ) : AdminNicknameExhibitService {
-
-    private val log = LoggerFactory.getLogger(javaClass)
 
     override fun search(
         keyword: String?,
@@ -57,7 +54,6 @@ class AdminNicknameExhibitServiceImpl(
                 sortOrder = request.sortOrder
             )
         )
-        log.info("action=admin_exhibit_create, id={}, nickname={}", saved.id, saved.nickname)
         return AdminNicknameExhibitResponse.from(saved)
     }
 
@@ -71,7 +67,6 @@ class AdminNicknameExhibitServiceImpl(
             history = request.history,
             sortOrder = request.sortOrder
         )
-        log.info("action=admin_exhibit_update, id={}", id)
         return AdminNicknameExhibitResponse.from(exhibit)
     }
 
@@ -80,7 +75,6 @@ class AdminNicknameExhibitServiceImpl(
         val exhibit = nicknameExhibitRepository.findById(id)
             .orElseThrow { DigdaException(ErrorCode.EXHIBIT_NOT_FOUND) }
         nicknameExhibitRepository.delete(exhibit)
-        log.info("action=admin_exhibit_delete, id={}", id)
     }
 
     override fun searchAccess(
@@ -109,13 +103,11 @@ class AdminNicknameExhibitServiceImpl(
         val user = userRepository.findById(userId)
             .orElseThrow { DigdaException(ErrorCode.USER_NOT_FOUND) }
         val saved = nicknameExhibitAccessRepository.save(NicknameExhibitAccess(user = user))
-        log.info("action=admin_exhibit_access_add, userId={}", userId)
         return AdminExhibitAccessResponse.from(saved)
     }
 
     @Transactional
     override fun removeAccess(userId: UUID) {
         nicknameExhibitAccessRepository.deleteByUserId(userId)
-        log.info("action=admin_exhibit_access_remove, userId={}", userId)
     }
 }
