@@ -7,8 +7,10 @@ import digdaserver.domain.schedule.presentation.dto.req.UpdateScheduleRequest
 import digdaserver.domain.schedule.presentation.dto.res.ScheduleDetailResponse
 import digdaserver.domain.schedule.presentation.dto.res.ScheduleListResponse
 import digdaserver.domain.schedule.presentation.dto.res.ScheduleResponse
+import digdaserver.global.infra.logging.LogUserContext.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -30,6 +32,8 @@ class ScheduleController(
     private val scheduleService: ScheduleService
 ) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Operation(summary = "일정 목록 조회 (기간)", description = "시작일~종료일 범위의 일정 목록을 조회합니다.")
     @GetMapping("/group-rooms/{groupRoomId}/schedules")
     fun getSchedules(
@@ -42,6 +46,13 @@ class ScheduleController(
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         endDate: LocalDate
     ): ResponseEntity<ScheduleListResponse> {
+        log.info(
+            "api=GET /group-rooms/{}/schedules, userId={}, startDate={}, endDate={}",
+            groupRoomId,
+            currentUserId(),
+            startDate,
+            endDate
+        )
         val response = scheduleService.getSchedules(UUID.fromString(userId), groupRoomId, startDate, endDate)
         return ResponseEntity.ok(response)
     }
@@ -53,6 +64,12 @@ class ScheduleController(
         @PathVariable groupRoomId: Long,
         @PathVariable scheduleId: Long
     ): ResponseEntity<ScheduleDetailResponse> {
+        log.info(
+            "api=GET /group-rooms/{}/schedules/{}, userId={}",
+            groupRoomId,
+            scheduleId,
+            currentUserId()
+        )
         val response = scheduleService.getScheduleDetail(UUID.fromString(userId), groupRoomId, scheduleId)
         return ResponseEntity.ok(response)
     }
@@ -64,7 +81,24 @@ class ScheduleController(
         @PathVariable groupRoomId: Long,
         @RequestBody request: CreateScheduleRequest
     ): ResponseEntity<ScheduleResponse> {
+        log.info(
+            "api=POST /group-rooms/{}/schedules, userId={}, startDate={}, endDate={}, " +
+                "allDay={}, participantCount={}, titleLength={}",
+            groupRoomId,
+            currentUserId(),
+            request.startDate,
+            request.endDate,
+            request.allDay,
+            request.participantIds?.size ?: 0,
+            request.title.length
+        )
         val response = scheduleService.createSchedule(UUID.fromString(userId), groupRoomId, request)
+        log.info(
+            "api=POST /group-rooms/{}/schedules 완료, userId={}, scheduleId={}",
+            groupRoomId,
+            currentUserId(),
+            response.id
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
@@ -79,7 +113,21 @@ class ScheduleController(
         @PathVariable scheduleId: Long,
         @RequestBody request: CopyScheduleRequest
     ): ResponseEntity<ScheduleListResponse> {
+        log.info(
+            "api=POST /group-rooms/{}/schedules/{}/copy, userId={}, dateCount={}",
+            groupRoomId,
+            scheduleId,
+            currentUserId(),
+            request.dates.size
+        )
         val response = scheduleService.copySchedule(UUID.fromString(userId), groupRoomId, scheduleId, request)
+        log.info(
+            "api=POST /group-rooms/{}/schedules/{}/copy 완료, userId={}, createdCount={}",
+            groupRoomId,
+            scheduleId,
+            currentUserId(),
+            response.schedules.size
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
@@ -91,7 +139,24 @@ class ScheduleController(
         @PathVariable scheduleId: Long,
         @RequestBody request: UpdateScheduleRequest
     ): ResponseEntity<ScheduleResponse> {
+        log.info(
+            "api=PUT /group-rooms/{}/schedules/{}, userId={}, startDate={}, endDate={}, " +
+                "allDay={}, participantCount={}",
+            groupRoomId,
+            scheduleId,
+            currentUserId(),
+            request.startDate,
+            request.endDate,
+            request.allDay,
+            request.participantIds?.size
+        )
         val response = scheduleService.updateSchedule(UUID.fromString(userId), groupRoomId, scheduleId, request)
+        log.info(
+            "api=PUT /group-rooms/{}/schedules/{} 완료, userId={}",
+            groupRoomId,
+            scheduleId,
+            currentUserId()
+        )
         return ResponseEntity.ok(response)
     }
 
@@ -102,7 +167,19 @@ class ScheduleController(
         @PathVariable groupRoomId: Long,
         @PathVariable scheduleId: Long
     ): ResponseEntity<Void> {
+        log.info(
+            "api=DELETE /group-rooms/{}/schedules/{}, userId={}",
+            groupRoomId,
+            scheduleId,
+            currentUserId()
+        )
         scheduleService.deleteSchedule(UUID.fromString(userId), groupRoomId, scheduleId)
+        log.info(
+            "api=DELETE /group-rooms/{}/schedules/{} 완료, userId={}",
+            groupRoomId,
+            scheduleId,
+            currentUserId()
+        )
         return ResponseEntity.noContent().build()
     }
 }

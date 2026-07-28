@@ -8,6 +8,7 @@ import digdaserver.domain.device.presentation.dto.res.RegisterDeviceResponse
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,9 +26,9 @@ class DeviceServiceImpl(
     @Transactional
     override fun registerDevice(userId: UUID, token: String, platform: String): RegisterDeviceResponse {
         // iOS FCM 미수신 디버깅: 어떤 플랫폼 등록 요청이 실제로 도착했는지 추적한다.
-        log.info("action=device_register_요청, userId={}, platform={}", userId, platform)
+        log.info("action=device_register_요청, userId={}, platform={}", UserLogKeyRegistry.of(userId), platform)
         if (token.isBlank()) {
-            log.warn("action=device_register_거부(빈 토큰), userId={}, platform={}", userId, platform)
+            log.warn("action=device_register_거부(빈 토큰), userId={}, platform={}", UserLogKeyRegistry.of(userId), platform)
             throw DigdaException(ErrorCode.INVALID_PARAMETER)
         }
         val parsedPlatform = parsePlatform(platform)
@@ -39,7 +40,7 @@ class DeviceServiceImpl(
                 // Same user re-registering the same token — idempotent
                 log.info(
                     "action=device_register_멱등(동일 사용자 동일 토큰), userId={}, platform={}, deviceId={}",
-                    userId,
+                    UserLogKeyRegistry.of(userId),
                     parsedPlatform,
                     device.id
                 )
@@ -61,14 +62,14 @@ class DeviceServiceImpl(
             )
         )
 
-        log.info("action=device_register_완료, userId={}, platform={}, deviceId={}", userId, parsedPlatform, saved.id)
+        log.info("action=device_register_완료, userId={}, platform={}, deviceId={}", UserLogKeyRegistry.of(userId), parsedPlatform, saved.id)
         return RegisterDeviceResponse(deviceId = saved.id)
     }
 
     // iOS FCM 등록 실패 진단(앱이 토큰을 못 얻어 /devices 를 못 칠 때)을 서버 로그로
     // 노출한다. 윈도우 개발 환경에선 기기 콘솔을 못 보므로 원인을 여기서 확인한다. DB 저장 없음.
     override fun logDiagnostic(userId: UUID, detail: String) {
-        log.warn("action=device_register_iOS진단, userId={}, detail={}", userId, detail)
+        log.warn("action=device_register_iOS진단, userId={}, detail={}", UserLogKeyRegistry.of(userId), detail)
     }
 
     @Transactional

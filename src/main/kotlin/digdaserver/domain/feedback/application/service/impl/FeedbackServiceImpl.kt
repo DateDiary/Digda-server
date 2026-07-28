@@ -10,6 +10,7 @@ import digdaserver.domain.feedback.presentation.dto.res.FeedbackQuestionResponse
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -56,6 +57,6 @@ class FeedbackServiceImpl(
         val saved = feedbackSubmissionRepository.save(
             FeedbackSubmission(user = user, answers = answersJson)
         )
-        log.info("action=피드백 제출, userId={}, submissionId={}, answers={}", userId, saved.id, items.size)
+        log.info("action=피드백 제출, userId={}, submissionId={}, answers={}", UserLogKeyRegistry.of(userId), saved.id, items.size)
     }
 }

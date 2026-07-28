@@ -3,6 +3,7 @@ package digdaserver.domain.catchmind.presentation.controller
 import digdaserver.domain.catchmind.application.CatchmindService
 import digdaserver.domain.catchmind.presentation.dto.CatchmindGuessRequest
 import digdaserver.domain.catchmind.presentation.dto.CatchmindStrokeRequest
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
@@ -34,7 +35,7 @@ class CatchmindWsController(
             log.warn(
                 "action=catchmind_stroke_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }
@@ -48,7 +49,7 @@ class CatchmindWsController(
             log.warn(
                 "action=catchmind_clear_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }
@@ -62,7 +63,7 @@ class CatchmindWsController(
             log.warn(
                 "action=catchmind_skip_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }
@@ -80,7 +81,7 @@ class CatchmindWsController(
             log.warn(
                 "action=catchmind_guess_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }

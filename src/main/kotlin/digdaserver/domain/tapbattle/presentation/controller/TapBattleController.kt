@@ -3,6 +3,7 @@ package digdaserver.domain.tapbattle.presentation.controller
 import digdaserver.domain.tapbattle.application.TapBattleService
 import digdaserver.domain.tapbattle.presentation.dto.CreateTapBattleRequest
 import digdaserver.domain.tapbattle.presentation.dto.TapBattleResponse
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -39,7 +40,7 @@ class TapBattleController(
     ): ResponseEntity<TapBattleResponse> {
         log.info(
             "api=POST /tapbattle/games, userId={}, groupRoomId={}, inviteeUserId={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             request.inviteeUserId
         )
@@ -54,7 +55,7 @@ class TapBattleController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<TapBattleResponse> {
-        log.info("api=GET /tapbattle/games/{}, userId={}", gameId, userId)
+        log.info("api=GET /tapbattle/games/{}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(tapBattleService.getGame(UUID.fromString(userId), gameId))
     }
 
@@ -64,7 +65,7 @@ class TapBattleController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<TapBattleResponse> {
-        log.info("api=POST /tapbattle/games/{}/accept, userId={}", gameId, userId)
+        log.info("api=POST /tapbattle/games/{}/accept, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(tapBattleService.accept(UUID.fromString(userId), gameId))
     }
 
@@ -74,7 +75,7 @@ class TapBattleController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<TapBattleResponse> {
-        log.info("api=POST /tapbattle/games/{}/decline, userId={}", gameId, userId)
+        log.info("api=POST /tapbattle/games/{}/decline, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(tapBattleService.decline(UUID.fromString(userId), gameId))
     }
 
@@ -84,7 +85,7 @@ class TapBattleController(
         @AuthenticationPrincipal userId: String,
         @PathVariable gameId: Long
     ): ResponseEntity<TapBattleResponse> {
-        log.info("api=POST /tapbattle/games/{}/cancel, userId={}", gameId, userId)
+        log.info("api=POST /tapbattle/games/{}/cancel, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return ResponseEntity.ok(tapBattleService.cancel(UUID.fromString(userId), gameId))
     }
 }

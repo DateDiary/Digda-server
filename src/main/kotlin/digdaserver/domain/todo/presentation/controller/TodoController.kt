@@ -5,8 +5,10 @@ import digdaserver.domain.todo.presentation.dto.req.CreateTodoRequest
 import digdaserver.domain.todo.presentation.dto.req.ToggleTodoRequest
 import digdaserver.domain.todo.presentation.dto.res.TodoListResponse
 import digdaserver.domain.todo.presentation.dto.res.TodoResponse
+import digdaserver.global.infra.logging.LogUserContext.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -25,12 +27,15 @@ class TodoController(
     private val todoService: TodoService
 ) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Operation(summary = "할 일 목록 조회", description = "그룹방의 할 일 목록을 조회합니다. 미완료 → 완료 순서로 정렬됩니다.")
     @GetMapping("/group-rooms/{groupRoomId}/todos")
     fun getTodos(
         @AuthenticationPrincipal userId: String,
         @PathVariable groupRoomId: Long
     ): ResponseEntity<TodoListResponse> {
+        log.info("api=GET /group-rooms/{}/todos, userId={}", groupRoomId, currentUserId())
         val response = todoService.getTodos(UUID.fromString(userId), groupRoomId)
         return ResponseEntity.ok(response)
     }
@@ -42,7 +47,19 @@ class TodoController(
         @PathVariable groupRoomId: Long,
         @RequestBody request: CreateTodoRequest
     ): ResponseEntity<TodoResponse> {
+        log.info(
+            "api=POST /group-rooms/{}/todos, userId={}, textLength={}",
+            groupRoomId,
+            currentUserId(),
+            request.text.length
+        )
         val response = todoService.createTodo(UUID.fromString(userId), groupRoomId, request.text)
+        log.info(
+            "api=POST /group-rooms/{}/todos 완료, userId={}, todoId={}",
+            groupRoomId,
+            currentUserId(),
+            response.id
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
@@ -54,7 +71,21 @@ class TodoController(
         @PathVariable todoId: Long,
         @RequestBody request: ToggleTodoRequest
     ): ResponseEntity<TodoResponse> {
+        log.info(
+            "api=PATCH /group-rooms/{}/todos/{}, userId={}, completed={}",
+            groupRoomId,
+            todoId,
+            currentUserId(),
+            request.completed
+        )
         val response = todoService.toggleTodo(UUID.fromString(userId), groupRoomId, todoId, request.completed)
+        log.info(
+            "api=PATCH /group-rooms/{}/todos/{} 완료, userId={}, completed={}",
+            groupRoomId,
+            todoId,
+            currentUserId(),
+            response.completed
+        )
         return ResponseEntity.ok(response)
     }
 
@@ -65,7 +96,19 @@ class TodoController(
         @PathVariable groupRoomId: Long,
         @PathVariable todoId: Long
     ): ResponseEntity<Void> {
+        log.info(
+            "api=DELETE /group-rooms/{}/todos/{}, userId={}",
+            groupRoomId,
+            todoId,
+            currentUserId()
+        )
         todoService.deleteTodo(UUID.fromString(userId), groupRoomId, todoId)
+        log.info(
+            "api=DELETE /group-rooms/{}/todos/{} 완료, userId={}",
+            groupRoomId,
+            todoId,
+            currentUserId()
+        )
         return ResponseEntity.noContent().build()
     }
 }

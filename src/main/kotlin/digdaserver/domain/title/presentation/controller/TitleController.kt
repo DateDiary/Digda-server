@@ -6,6 +6,7 @@ import digdaserver.domain.title.presentation.dto.req.EquipTitleRequest
 import digdaserver.domain.title.presentation.dto.res.EquippedTitleResponse
 import digdaserver.domain.title.presentation.dto.res.TitleCatalogResponse
 import digdaserver.domain.title.presentation.dto.res.TitleResponse
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -60,7 +61,7 @@ class TitleController(
         @AuthenticationPrincipal userId: String,
         @RequestBody request: ClaimTitlesRequest
     ): ResponseEntity<List<TitleResponse>> {
-        log.info("api=POST /titles/claim, userId={}, count={}", userId, request.titles.size)
+        log.info("api=POST /titles/claim, userId={}, count={}", UserLogKeyRegistry.of(userId), request.titles.size)
         return ResponseEntity.ok(titleService.claim(UUID.fromString(userId), request.titles))
     }
 
@@ -87,7 +88,7 @@ class TitleController(
     ): ResponseEntity<EquippedTitleResponse> {
         log.info(
             "api=PUT /titles/equip, userId={}, groupRoomId={}, code={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             request.groupRoomId,
             request.code
         )

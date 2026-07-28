@@ -53,6 +53,23 @@ class JWTUtil(
         }
     }
 
+    /**
+     * 로그 식별자용 이메일 클레임. 토큰에 email 이 없는 구버전 토큰도 있을 수 있어
+     * 실패는 예외로 올리지 않고 null 로 떨군다 — 로깅 때문에 요청이 깨지면 안 된다.
+     */
+    fun getEmailOrNull(token: String): String? {
+        return try {
+            Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+                .get("email", String::class.java)
+        } catch (e: JwtException) {
+            null
+        }
+    }
+
     fun getRole(token: String): Role {
         return try {
             val claims = Jwts.parser()

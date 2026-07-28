@@ -4,8 +4,11 @@ import digdaserver.domain.block.application.service.BlockService
 import digdaserver.domain.block.domain.entity.HideReason
 import digdaserver.domain.block.presentation.dto.req.HideContentRequest
 import digdaserver.domain.block.presentation.dto.res.BlockedUserResponse
+import digdaserver.global.infra.logging.LogUserContext.currentUserId
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -22,13 +25,27 @@ class BlockController(
     private val blockService: BlockService
 ) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Operation(summary = "사용자 차단", description = "해당 사용자의 모든 일기·댓글·일정을 내 화면에서 숨깁니다(전역·단방향).")
     @PostMapping("/blocks/users/{userId}")
     fun blockUser(
         @AuthenticationPrincipal myId: String,
         @PathVariable userId: String
     ): ResponseEntity<Void> {
+        log.info(
+            "api=POST /blocks/users/{}, userId={}, targetUserId={}",
+            userId,
+            currentUserId(),
+            UserLogKeyRegistry.of(userId)
+        )
         blockService.blockUser(UUID.fromString(myId), UUID.fromString(userId))
+        log.info(
+            "api=POST /blocks/users/{} 완료, userId={}, targetUserId={}",
+            userId,
+            currentUserId(),
+            UserLogKeyRegistry.of(userId)
+        )
         return ResponseEntity.noContent().build()
     }
 
@@ -38,7 +55,19 @@ class BlockController(
         @AuthenticationPrincipal myId: String,
         @PathVariable userId: String
     ): ResponseEntity<Void> {
+        log.info(
+            "api=DELETE /blocks/users/{}, userId={}, targetUserId={}",
+            userId,
+            currentUserId(),
+            UserLogKeyRegistry.of(userId)
+        )
         blockService.unblockUser(UUID.fromString(myId), UUID.fromString(userId))
+        log.info(
+            "api=DELETE /blocks/users/{} 완료, userId={}, targetUserId={}",
+            userId,
+            currentUserId(),
+            UserLogKeyRegistry.of(userId)
+        )
         return ResponseEntity.noContent().build()
     }
 
@@ -47,6 +76,7 @@ class BlockController(
     fun listBlockedUsers(
         @AuthenticationPrincipal myId: String
     ): ResponseEntity<List<BlockedUserResponse>> {
+        log.info("api=GET /blocks/users, userId={}", currentUserId())
         return ResponseEntity.ok(blockService.listBlockedUsers(UUID.fromString(myId)))
     }
 
@@ -56,7 +86,19 @@ class BlockController(
         @AuthenticationPrincipal myId: String,
         @RequestBody request: HideContentRequest
     ): ResponseEntity<Void> {
+        log.info(
+            "api=POST /blocks/content, userId={}, targetType={}, targetId={}",
+            currentUserId(),
+            request.targetType,
+            request.targetId
+        )
         blockService.hideContent(UUID.fromString(myId), request.targetType, request.targetId, HideReason.HIDDEN)
+        log.info(
+            "api=POST /blocks/content 완료, userId={}, targetType={}, targetId={}",
+            currentUserId(),
+            request.targetType,
+            request.targetId
+        )
         return ResponseEntity.noContent().build()
     }
 
@@ -66,7 +108,19 @@ class BlockController(
         @AuthenticationPrincipal myId: String,
         @RequestBody request: HideContentRequest
     ): ResponseEntity<Void> {
+        log.info(
+            "api=DELETE /blocks/content, userId={}, targetType={}, targetId={}",
+            currentUserId(),
+            request.targetType,
+            request.targetId
+        )
         blockService.unhideContent(UUID.fromString(myId), request.targetType, request.targetId)
+        log.info(
+            "api=DELETE /blocks/content 완료, userId={}, targetType={}, targetId={}",
+            currentUserId(),
+            request.targetType,
+            request.targetId
+        )
         return ResponseEntity.noContent().build()
     }
 }

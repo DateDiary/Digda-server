@@ -13,6 +13,7 @@ import digdaserver.domain.log.domain.entity.UserAction
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -81,7 +82,7 @@ class BlockServiceImpl(
         if (contentHideRepository.existsByUserIdAndTargetTypeAndTargetId(userId, targetType, targetId)) {
             log.info(
                 "action=콘텐츠 숨김 멱등 스킵(이미 숨김), userId={}, type={}, targetId={}",
-                userId,
+                UserLogKeyRegistry.of(userId),
                 targetType,
                 targetId
             )
@@ -97,7 +98,7 @@ class BlockServiceImpl(
             targetId = targetId.toString(),
             detail = "reason=$reason"
         )
-        log.info("action=콘텐츠 숨김, userId={}, type={}, targetId={}, reason={}", userId, targetType, targetId, reason)
+        log.info("action=콘텐츠 숨김, userId={}, type={}, targetId={}, reason={}", UserLogKeyRegistry.of(userId), targetType, targetId, reason)
     }
 
     @Transactional
@@ -106,13 +107,13 @@ class BlockServiceImpl(
         if (hide == null) {
             log.info(
                 "action=콘텐츠 숨김 해제 멱등 스킵(숨김 아님), userId={}, type={}, targetId={}",
-                userId,
+                UserLogKeyRegistry.of(userId),
                 targetType,
                 targetId
             )
             return
         }
         contentHideRepository.delete(hide)
-        log.info("action=콘텐츠 숨김 해제, userId={}, type={}, targetId={}", userId, targetType, targetId)
+        log.info("action=콘텐츠 숨김 해제, userId={}, type={}, targetId={}", UserLogKeyRegistry.of(userId), targetType, targetId)
     }
 }

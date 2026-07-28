@@ -46,7 +46,6 @@ class AdminFeedbackServiceImpl(
             )
         }
         val saved = feedbackQuestionRepository.saveAll(entities)
-        log.info("action=피드백 문항 저장, count={}", saved.size)
         return saved.map { AdminFeedbackQuestionResponse.from(it) }
     }
 

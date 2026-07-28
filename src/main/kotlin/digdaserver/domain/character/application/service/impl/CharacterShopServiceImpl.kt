@@ -18,6 +18,7 @@ import digdaserver.domain.group_room.domain.repository.GroupRoomRepository
 import digdaserver.domain.membership.domain.repository.MembershipRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -106,7 +107,7 @@ class CharacterShopServiceImpl(
 
         log.info(
             "action=character_shop_buy_item, userId={}, groupRoomId={}, itemKey={}, cost={}, balanceAfter={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             itemKey,
             item.cost,
@@ -136,7 +137,7 @@ class CharacterShopServiceImpl(
 
         log.info(
             "action=character_shop_equip, userId={}, groupRoomId={}, itemKey={}, itemType={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             itemKey,
             item.itemType
@@ -169,7 +170,7 @@ class CharacterShopServiceImpl(
 
         log.info(
             "action=character_shop_unequip, userId={}, groupRoomId={}, itemType={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             itemType
         )

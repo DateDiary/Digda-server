@@ -10,7 +10,6 @@ import digdaserver.admin.nicknameexhibit.presentation.dto.res.AdminNicknameExhib
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -38,8 +37,6 @@ class AdminNicknameExhibitController(
     private val adminNicknameExhibitService: AdminNicknameExhibitService
 ) {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     // ── 콘텐츠(별명 카드) CRUD ──
 
     @Operation(summary = "별명 카드 목록 조회", description = "별명 키워드 검색 + 정렬순 페이지네이션")
@@ -49,7 +46,6 @@ class AdminNicknameExhibitController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int
     ): ResponseEntity<AdminPageResponse<AdminNicknameExhibitResponse>> {
-        log.info("api=GET /api/admin/nickname-exhibits, keyword={}, page={}", keyword, page)
         return ResponseEntity.ok(adminNicknameExhibitService.search(keyword, page, size))
     }
 

@@ -19,6 +19,7 @@ import digdaserver.domain.notification.application.service.NotificationService
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -40,7 +41,7 @@ class InviteServiceImpl(
 
     @Transactional
     override fun regenerateInviteCode(userId: UUID, groupRoomId: Long): InviteCodeResponse {
-        log.info("regenerateInviteCode: userId={}, groupRoomId={}", userId, groupRoomId)
+        log.info("regenerateInviteCode: userId={}, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
 
         val groupRoom = groupRoomRepository.findById(groupRoomId)
             .orElseThrow { DigdaException(ErrorCode.GROUP_ROOM_NOT_FOUND) }

@@ -8,7 +8,6 @@ import digdaserver.domain.character.application.level.CharacterLevelTable
 import digdaserver.domain.character.domain.repository.GroupCharacterRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -19,8 +18,6 @@ import org.springframework.transaction.annotation.Transactional
 class AdminCharacterServiceImpl(
     private val groupCharacterRepository: GroupCharacterRepository
 ) : AdminCharacterService {
-
-    private val log = LoggerFactory.getLogger(javaClass)
 
     override fun search(
         keyword: String?,
@@ -74,16 +71,6 @@ class AdminCharacterServiceImpl(
             character.adminSetDikoUnlocked(unlocked)
         }
 
-        log.info(
-            "action=admin_character_update, groupRoomId={}, level={}, exp={}, coin={}, " +
-                "stage={}, dikoUnlocked={}",
-            groupRoomId,
-            character.level,
-            character.exp,
-            character.coin,
-            character.stage,
-            character.dikoUnlocked
-        )
         return AdminCharacterResponse.from(character)
     }
 }

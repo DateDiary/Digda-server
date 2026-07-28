@@ -8,6 +8,7 @@ import digdaserver.domain.character.presentation.dto.res.AddExpResponse
 import digdaserver.domain.character.presentation.dto.res.CharacterStageTreeResponse
 import digdaserver.domain.character.presentation.dto.res.CharacterStateResponse
 import digdaserver.domain.character.presentation.dto.res.MasterGameRewardResponse
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -39,7 +40,7 @@ class CharacterController(
         @AuthenticationPrincipal userId: String,
         @RequestParam groupRoomId: Long
     ): ResponseEntity<CharacterStateResponse> {
-        log.info("api=GET /character, userId={}, groupRoomId={}", userId, groupRoomId)
+        log.info("api=GET /character, userId={}, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
         return ResponseEntity.ok(
             characterService.getGroupCharacter(UUID.fromString(userId), groupRoomId)
         )
@@ -57,7 +58,7 @@ class CharacterController(
     ): ResponseEntity<AddExpResponse> {
         log.info(
             "api=POST /character/exp, userId={}, groupRoomId={}, amount={}, source={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             request.amount,
             request.source
@@ -79,7 +80,7 @@ class CharacterController(
         @AuthenticationPrincipal userId: String,
         @RequestParam groupRoomId: Long
     ): ResponseEntity<CharacterStageTreeResponse> {
-        log.info("api=GET /character/stages, userId={}, groupRoomId={}", userId, groupRoomId)
+        log.info("api=GET /character/stages, userId={}, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
         return ResponseEntity.ok(
             characterService.getStageTree(UUID.fromString(userId), groupRoomId)
         )
@@ -96,7 +97,7 @@ class CharacterController(
     ): ResponseEntity<CharacterStateResponse> {
         log.info(
             "api=POST /character/master-game-start, userId={}, groupRoomId={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId
         )
         return ResponseEntity.ok(
@@ -116,7 +117,7 @@ class CharacterController(
     ): ResponseEntity<MasterGameRewardResponse> {
         log.info(
             "api=POST /character/master-game-reward, userId={}, groupRoomId={}, score={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             request.score
         )
@@ -138,7 +139,7 @@ class CharacterController(
         @AuthenticationPrincipal userId: String,
         @RequestParam groupRoomId: Long
     ): ResponseEntity<AdRewardResponse> {
-        log.info("api=POST /character/ad-reward, userId={}, groupRoomId={}", userId, groupRoomId)
+        log.info("api=POST /character/ad-reward, userId={}, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
         return ResponseEntity.ok(
             characterService.claimAdReward(UUID.fromString(userId), groupRoomId)
         )

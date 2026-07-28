@@ -10,6 +10,7 @@ import digdaserver.domain.notification.application.service.NotificationService
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.scheduling.annotation.Scheduled
@@ -99,7 +100,7 @@ class AlkkagiService(
         log.info(
             "action=alkkagi_accept, gameId={}, userId={}, formation={}",
             gameId,
-            userId,
+            UserLogKeyRegistry.of(userId),
             formation
         )
         return broadcast(game, AlkkagiEvent.Type.ACCEPTED)
@@ -108,14 +109,14 @@ class AlkkagiService(
     fun decline(userId: UUID, gameId: Long): AlkkagiGameResponse {
         val game = gameManager.get(gameId)
         game.decline(userId)
-        log.info("action=alkkagi_decline, gameId={}, userId={}", gameId, userId)
+        log.info("action=alkkagi_decline, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, AlkkagiEvent.Type.DECLINED)
     }
 
     fun cancel(userId: UUID, gameId: Long): AlkkagiGameResponse {
         val game = gameManager.get(gameId)
         game.cancel(userId)
-        log.info("action=alkkagi_cancel, gameId={}, userId={}", gameId, userId)
+        log.info("action=alkkagi_cancel, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         return broadcast(game, AlkkagiEvent.Type.CANCELED)
     }
 
@@ -133,7 +134,7 @@ class AlkkagiService(
         log.info(
             "action=alkkagi_move, gameId={}, userId={}, stoneId={}, finished={}",
             gameId,
-            userId,
+            UserLogKeyRegistry.of(userId),
             request.stoneId,
             finished
         )
@@ -153,7 +154,7 @@ class AlkkagiService(
     fun forfeit(userId: UUID, gameId: Long) {
         val game = gameManager.get(gameId)
         game.forfeit(userId)
-        log.info("action=alkkagi_forfeit, gameId={}, userId={}", gameId, userId)
+        log.info("action=alkkagi_forfeit, gameId={}, userId={}", gameId, UserLogKeyRegistry.of(userId))
         broadcast(game, AlkkagiEvent.Type.FINISHED)
     }
 

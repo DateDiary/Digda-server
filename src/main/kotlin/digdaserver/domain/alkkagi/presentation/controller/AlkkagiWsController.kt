@@ -2,6 +2,7 @@ package digdaserver.domain.alkkagi.presentation.controller
 
 import digdaserver.domain.alkkagi.application.AlkkagiService
 import digdaserver.domain.alkkagi.presentation.dto.AlkkagiMoveRequest
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
@@ -36,7 +37,7 @@ class AlkkagiWsController(
             log.warn(
                 "action=alkkagi_move_rejected, gameId={}, userId={}, stoneId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 request.stoneId,
                 e.message
             )
@@ -54,7 +55,7 @@ class AlkkagiWsController(
             log.warn(
                 "action=alkkagi_forfeit_rejected, gameId={}, userId={}, reason={}",
                 gameId,
-                principal.name,
+                UserLogKeyRegistry.of(principal.name),
                 e.message
             )
         }

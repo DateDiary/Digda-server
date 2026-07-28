@@ -30,6 +30,7 @@ import digdaserver.domain.upload.domain.repository.UploadedImageRepository
 import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
+import digdaserver.global.infra.logging.UserLogKeyRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -76,7 +77,7 @@ class GroupRoomServiceImpl(
 
     @Transactional
     override fun createGroupRoom(userId: UUID, request: CreateGroupRoomRequest): CreateGroupRoomResponse {
-        log.info("userId={}, action=그룹 생성 요청, name={}", userId, request.name)
+        log.info("userId={}, action=그룹 생성 요청, name={}", UserLogKeyRegistry.of(userId), request.name)
         validateGroupRoomName(request.name)
 
         val user = userRepository.findById(userId)
@@ -127,7 +128,7 @@ class GroupRoomServiceImpl(
 
         log.info(
             "userId={}, action=그룹 생성 완료, groupRoomId={}, thumbnail={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoom.id,
             groupRoom.thumbnailImage
         )
@@ -140,7 +141,7 @@ class GroupRoomServiceImpl(
     }
 
     override fun getMyGroupRooms(userId: UUID): GroupRoomListResponse {
-        log.info("userId={}, action=내 그룹방 목록 조회", userId)
+        log.info("userId={}, action=내 그룹방 목록 조회", UserLogKeyRegistry.of(userId))
         val memberships = membershipRepository.findAllByUserIdWithGroupRoom(userId)
 
         val groupRoomItems = memberships.map { membership ->
@@ -160,7 +161,7 @@ class GroupRoomServiceImpl(
     }
 
     override fun getGroupRoomDetail(userId: UUID, groupRoomId: Long): GroupRoomDetailResponse {
-        log.info("userId={}, action=그룹 상세 조회, groupRoomId={}", userId, groupRoomId)
+        log.info("userId={}, action=그룹 상세 조회, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
         val groupRoom = groupRoomRepository.findById(groupRoomId)
             .orElseThrow { DigdaException(ErrorCode.GROUP_ROOM_NOT_FOUND) }
 
@@ -180,7 +181,7 @@ class GroupRoomServiceImpl(
     }
 
     override fun getGroupHome(userId: UUID, groupRoomId: Long): GroupHomeResponse {
-        log.info("userId={}, action=그룹 홈 조회, groupRoomId={}", userId, groupRoomId)
+        log.info("userId={}, action=그룹 홈 조회, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
 
         val groupRoom = groupRoomRepository.findById(groupRoomId)
             .orElseThrow { DigdaException(ErrorCode.GROUP_ROOM_NOT_FOUND) }
@@ -234,7 +235,7 @@ class GroupRoomServiceImpl(
     override fun updateGroupRoom(userId: UUID, groupRoomId: Long, request: UpdateGroupRoomRequest): GroupRoomResponse {
         log.info(
             "userId={}, action=그룹 수정 요청, groupRoomId={}, fields=[name={}, maxMembers={}, thumbnailImageId={}]",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             request.name,
             request.maxMembers,
@@ -275,7 +276,7 @@ class GroupRoomServiceImpl(
                 } else {
                     log.warn(
                         "userId={}, action=그룹 썸네일 변경 무시(업로드 lookup 실패), groupRoomId={}, imageId={}",
-                        userId,
+                        UserLogKeyRegistry.of(userId),
                         groupRoomId,
                         optional.get()
                     )
@@ -287,7 +288,7 @@ class GroupRoomServiceImpl(
 
         log.info(
             "userId={}, action=그룹 수정 완료, groupRoomId={}, thumbnail={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             groupRoom.thumbnailImage
         )
@@ -298,7 +299,7 @@ class GroupRoomServiceImpl(
 
     @Transactional
     override fun deleteGroupRoom(userId: UUID, groupRoomId: Long): GroupRoomDeleteResponse {
-        log.info("userId={}, action=그룹 삭제 요청, groupRoomId={}", userId, groupRoomId)
+        log.info("userId={}, action=그룹 삭제 요청, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
 
         val groupRoom = groupRoomRepository.findById(groupRoomId)
             .orElseThrow { DigdaException(ErrorCode.GROUP_ROOM_NOT_FOUND) }
@@ -316,7 +317,7 @@ class GroupRoomServiceImpl(
 
         log.info(
             "userId={}, action=그룹 삭제 예약 완료, groupRoomId={}, deleteScheduledAt={}",
-            userId,
+            UserLogKeyRegistry.of(userId),
             groupRoomId,
             groupRoom.deleteScheduledAt
         )
@@ -328,7 +329,7 @@ class GroupRoomServiceImpl(
 
     @Transactional
     override fun recoverGroupRoom(userId: UUID, groupRoomId: Long): GroupRoomResponse {
-        log.info("userId={}, action=그룹 복구 요청, groupRoomId={}", userId, groupRoomId)
+        log.info("userId={}, action=그룹 복구 요청, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
 
         val groupRoom = groupRoomRepository.findById(groupRoomId)
             .orElseThrow { DigdaException(ErrorCode.GROUP_ROOM_NOT_FOUND) }
@@ -344,7 +345,7 @@ class GroupRoomServiceImpl(
 
         groupRoom.recover()
 
-        log.info("userId={}, action=그룹 복구 완료, groupRoomId={}", userId, groupRoomId)
+        log.info("userId={}, action=그룹 복구 완료, groupRoomId={}", UserLogKeyRegistry.of(userId), groupRoomId)
 
         val memberCount = membershipRepository.countByGroupRoomId(groupRoomId)
         return GroupRoomResponse.from(groupRoom, memberCount)

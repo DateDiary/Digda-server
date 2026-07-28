@@ -9,8 +9,10 @@ import digdaserver.domain.group_room.presentation.dto.res.GroupRoomDeleteRespons
 import digdaserver.domain.group_room.presentation.dto.res.GroupRoomDetailResponse
 import digdaserver.domain.group_room.presentation.dto.res.GroupRoomListResponse
 import digdaserver.domain.group_room.presentation.dto.res.GroupRoomResponse
+import digdaserver.global.infra.logging.LogUserContext.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -31,13 +33,29 @@ class GroupRoomController(
     private val groupRoomService: GroupRoomService
 ) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Operation(summary = "그룹방 생성", description = "그룹방을 생성합니다. 생성자가 방장이 되며 초대 코드가 자동 발급됩니다.")
     @PostMapping
     fun createGroupRoom(
         @AuthenticationPrincipal userId: String,
         @RequestBody request: CreateGroupRoomRequest
     ): ResponseEntity<CreateGroupRoomResponse> {
+        log.info(
+            "api=POST /group-rooms, userId={}, maxMembers={}, hasThumbnail={}, nameLength={}",
+            currentUserId(),
+            request.maxMembers,
+            request.thumbnailImageId != null,
+            request.name.length
+        )
         val response = groupRoomService.createGroupRoom(UUID.fromString(userId), request)
+        // 초대 코드 자체는 공유되면 누구나 입장 가능한 값이라 로그에 남기지 않는다.
+        log.info(
+            "api=POST /group-rooms 완료, userId={}, groupRoomId={}, inviteCodeExpiresAt={}",
+            currentUserId(),
+            response.groupRoom.id,
+            response.inviteCodeExpiresAt
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
@@ -46,6 +64,7 @@ class GroupRoomController(
     fun getMyGroupRooms(
         @AuthenticationPrincipal userId: String
     ): ResponseEntity<GroupRoomListResponse> {
+        log.info("api=GET /group-rooms, userId={}", currentUserId())
         val response = groupRoomService.getMyGroupRooms(UUID.fromString(userId))
         return ResponseEntity.ok(response)
     }
@@ -56,6 +75,7 @@ class GroupRoomController(
         @AuthenticationPrincipal userId: String,
         @PathVariable groupRoomId: Long
     ): ResponseEntity<GroupRoomDetailResponse> {
+        log.info("api=GET /group-rooms/{}, userId={}", groupRoomId, currentUserId())
         val response = groupRoomService.getGroupRoomDetail(UUID.fromString(userId), groupRoomId)
         return ResponseEntity.ok(response)
     }
@@ -69,6 +89,7 @@ class GroupRoomController(
         @AuthenticationPrincipal userId: String,
         @PathVariable groupRoomId: Long
     ): ResponseEntity<GroupHomeResponse> {
+        log.info("api=GET /group-rooms/{}/home, userId={}", groupRoomId, currentUserId())
         val response = groupRoomService.getGroupHome(UUID.fromString(userId), groupRoomId)
         return ResponseEntity.ok(response)
     }
@@ -80,7 +101,21 @@ class GroupRoomController(
         @PathVariable groupRoomId: Long,
         @RequestBody request: UpdateGroupRoomRequest
     ): ResponseEntity<GroupRoomResponse> {
+        log.info(
+            "api=PUT /group-rooms/{}, userId={}, maxMembers={}, nameChanged={}, thumbnailChanged={}",
+            groupRoomId,
+            currentUserId(),
+            request.maxMembers,
+            request.name != null,
+            request.thumbnailImageId != null
+        )
         val response = groupRoomService.updateGroupRoom(UUID.fromString(userId), groupRoomId, request)
+        log.info(
+            "api=PUT /group-rooms/{} 완료, userId={}, memberCount={}",
+            groupRoomId,
+            currentUserId(),
+            response.memberCount
+        )
         return ResponseEntity.ok(response)
     }
 
@@ -90,7 +125,14 @@ class GroupRoomController(
         @AuthenticationPrincipal userId: String,
         @PathVariable groupRoomId: Long
     ): ResponseEntity<GroupRoomDeleteResponse> {
+        log.info("api=DELETE /group-rooms/{}, userId={}", groupRoomId, currentUserId())
         val response = groupRoomService.deleteGroupRoom(UUID.fromString(userId), groupRoomId)
+        log.info(
+            "api=DELETE /group-rooms/{} 완료, userId={}, deleteScheduledAt={}",
+            groupRoomId,
+            currentUserId(),
+            response.deleteScheduledAt
+        )
         return ResponseEntity.ok(response)
     }
 
@@ -100,7 +142,14 @@ class GroupRoomController(
         @AuthenticationPrincipal userId: String,
         @PathVariable groupRoomId: Long
     ): ResponseEntity<GroupRoomResponse> {
+        log.info("api=POST /group-rooms/{}/recover, userId={}", groupRoomId, currentUserId())
         val response = groupRoomService.recoverGroupRoom(UUID.fromString(userId), groupRoomId)
+        log.info(
+            "api=POST /group-rooms/{}/recover 완료, userId={}, memberCount={}",
+            groupRoomId,
+            currentUserId(),
+            response.memberCount
+        )
         return ResponseEntity.ok(response)
     }
 }

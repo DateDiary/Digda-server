@@ -7,7 +7,6 @@ import digdaserver.admin.feedback.presentation.dto.res.AdminFeedbackQuestionResp
 import digdaserver.admin.feedback.presentation.dto.res.AdminFeedbackSubmissionResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -27,8 +26,6 @@ class AdminFeedbackController(
     private val adminFeedbackService: AdminFeedbackService
 ) {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     @Operation(summary = "피드백 문항 조회", description = "비활성 포함 전체 문항을 순서대로 조회합니다.")
     @GetMapping("/questions")
     fun questions(): ResponseEntity<List<AdminFeedbackQuestionResponse>> =
@@ -39,7 +36,6 @@ class AdminFeedbackController(
     fun saveQuestions(
         @RequestBody request: SaveFeedbackQuestionsRequest
     ): ResponseEntity<List<AdminFeedbackQuestionResponse>> {
-        log.info("api=PUT /api/admin/feedback/questions, count={}", request.questions.size)
         return ResponseEntity.ok(adminFeedbackService.saveQuestions(request))
     }
 
