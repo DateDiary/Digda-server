@@ -36,7 +36,9 @@ data class CatchmindPlayerDto(
     val joined: Boolean,
     val declined: Boolean,
     val score: Int,
-    val isHost: Boolean
+    val isHost: Boolean,
+    /** 진행 중 기권 — 랭킹엔 남지만 출제/추리에서 빠진다. */
+    val forfeited: Boolean
 ) {
     companion object {
         fun from(p: CatchmindGame.Player, hostId: UUID): CatchmindPlayerDto =
@@ -46,7 +48,8 @@ data class CatchmindPlayerDto(
                 joined = p.joined,
                 declined = p.declined,
                 score = p.score,
-                isHost = p.userId == hostId
+                isHost = p.userId == hostId,
+                forfeited = p.forfeited
             )
     }
 }
@@ -111,17 +114,17 @@ data class CatchmindEvent(
     val type: Type,
     val game: CatchmindGameResponse? = null,
     val stroke: CatchmindGame.Stroke? = null,
-    /** GUESS(오답 채팅)/CORRECT 의 발화자. */
+    /** GUESS(오답 채팅)/CORRECT/FORFEITED 의 발화자. */
     val userId: UUID? = null,
     val userName: String? = null,
     /** GUESS 의 채팅 본문. */
     val text: String? = null,
-    /** CORRECT/ROUND_TIMEOUT/ROUND_SKIPPED 에서 공개되는 정답. */
+    /** CORRECT/ROUND_TIMEOUT/ROUND_SKIPPED/FORFEITED(출제자 기권) 에서 공개되는 정답. */
     val answer: String? = null
 ) {
     enum class Type {
         PLAYER_JOINED, PLAYER_DECLINED, STARTED, ROUND_START,
         STROKE, CLEAR, GUESS, CORRECT, ROUND_TIMEOUT, ROUND_SKIPPED,
-        FINISHED, CANCELED, EXPIRED
+        FORFEITED, FINISHED, CANCELED, EXPIRED
     }
 }

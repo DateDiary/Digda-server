@@ -31,6 +31,9 @@ class CatchmindGame(
     companion object {
         const val MIN_PLAYERS = 2
         const val MAX_STROKES = 600
+
+        /** 한 라운드 캔버스의 총 점 상한 — 조각 병합으로 항목 수가 줄어든 만큼 점으로 방어한다. */
+        const val MAX_POINTS = 20_000
         const val MIN_ROUND_SECONDS = 30
         const val MAX_ROUND_SECONDS = 300
         const val MIN_ROUNDS = 1
@@ -51,12 +54,17 @@ class CatchmindGame(
 
     enum class Status { WAITING, ACTIVE, FINISHED, CANCELED, EXPIRED }
 
+    /** 기권 처리 결과 — 호출자(서비스)가 라운드/게임 종료 브로드캐스트를 이어간다. */
+    enum class ForfeitOutcome { NONE, ROUND_ENDED, GAME_FINISHED }
+
     class Player(
         val userId: UUID,
         val name: String,
         var joined: Boolean,
         var declined: Boolean = false,
-        var score: Int = 0
+        var score: Int = 0,
+        /** 진행 중 기권 — 점수/랭킹엔 남지만 출제 순서와 추리에서 빠진다. */
+        var forfeited: Boolean = false
     )
 
     /** 한 획 — 정규화(0..1) 좌표 폴리라인. [done]=false 면 이어지는 획의 조각. */
@@ -95,6 +103,9 @@ class CatchmindGame(
     private var drawerOrder: List<UUID> = emptyList()
     private val usedWords = mutableSetOf<String>()
 
+    /** 현재 라운드 캔버스의 누적 점 수 — [MAX_POINTS] 방어용. */
+    private var pointCount: Int = 0
+
     init {
         players[hostId] = Player(hostId, hostName, joined = true)
         invitees.forEach { (id, name) ->
@@ -107,6 +118,9 @@ class CatchmindGame(
     fun isJoined(userId: UUID): Boolean = players[userId]?.joined == true
 
     fun joinedPlayers(): List<Player> = players.values.filter { it.joined }
+
+    /** 아직 게임에 남아 있는 참가자 — 기권자는 제외. */
+    fun activePlayers(): List<Player> = players.values.filter { it.joined && !it.forfeited }
 
     @Synchronized
     fun join(userId: UUID) {
@@ -153,13 +167,11 @@ class CatchmindGame(
     @Synchronized
     fun advanceRound(): Boolean {
         roundIndex += 1
-        strokes.clear()
+        clearStrokes()
         touch()
-        if (roundIndex >= totalRounds) {
-            status = Status.FINISHED
-            drawerId = null
-            word = null
-            roundDeadline = null
+        // 기권이 이어져 출제할 사람이 없어도 더 진행할 수 없다.
+        if (roundIndex >= totalRounds || drawerOrder.isEmpty()) {
+            finishNow()
             return false
         }
         drawerId = drawerOrder[roundIndex % drawerOrder.size]
@@ -171,14 +183,28 @@ class CatchmindGame(
     @Synchronized
     fun addStroke(userId: UUID, stroke: Stroke) {
         requireDrawer(userId)
-        if (strokes.size < MAX_STROKES) strokes.add(stroke)
+        if (pointCount >= MAX_POINTS) return
+        val last = strokes.lastOrNull()
+        if (last != null && last.strokeId == stroke.strokeId && !last.done) {
+            // 같은 획의 이어지는 조각 — 항목을 새로 쌓지 않고 점만 이어붙인다.
+            // 조각마다 항목을 만들면 획 하나로 MAX_STROKES 를 소진해, 재접속·늦은
+            // 참가자에게 그림 뒷부분이 통째로 사라진다.
+            strokes[strokes.lastIndex] = last.copy(
+                points = last.points + stroke.points,
+                done = stroke.done
+            )
+            pointCount += stroke.points.size
+        } else if (strokes.size < MAX_STROKES) {
+            strokes.add(stroke)
+            pointCount += stroke.points.size
+        }
         touch()
     }
 
     @Synchronized
     fun clearCanvas(userId: UUID) {
         requireDrawer(userId)
-        strokes.clear()
+        clearStrokes()
         touch()
     }
 
@@ -190,6 +216,27 @@ class CatchmindGame(
     }
 
     /**
+     * [userId] 기권 — 남은 라운드에서 출제 순서와 추리에서 빠진다.
+     * 남은 인원이 [MIN_PLAYERS] 미만이면 게임을 즉시 끝낸다.
+     */
+    @Synchronized
+    fun forfeit(userId: UUID): ForfeitOutcome {
+        if (status != Status.ACTIVE) throw DigdaException(ErrorCode.MINIGAME_INVALID_STATE)
+        val p = players[userId] ?: throw DigdaException(ErrorCode.MINIGAME_NOT_PARTICIPANT)
+        if (!p.joined || p.forfeited) throw DigdaException(ErrorCode.MINIGAME_INVALID_STATE)
+        val wasDrawer = userId == drawerId
+        p.forfeited = true
+        drawerOrder = drawerOrder.filterNot { it == userId }
+        touch()
+        if (activePlayers().size < MIN_PLAYERS || drawerOrder.isEmpty()) {
+            finishNow()
+            return ForfeitOutcome.GAME_FINISHED
+        }
+        // 출제자가 빠지면 아무도 그릴 수 없으니 이 라운드는 여기서 끝낸다.
+        return if (wasDrawer) ForfeitOutcome.ROUND_ENDED else ForfeitOutcome.NONE
+    }
+
+    /**
      * [userId] 의 추리. 정답이면 점수 반영 후 true — 호출자가 advanceRound 를 이어간다.
      * 출제자 본인의 채팅은 추리로 치지 않는다.
      */
@@ -197,7 +244,7 @@ class CatchmindGame(
     fun guess(userId: UUID, text: String): Boolean {
         if (status != Status.ACTIVE) throw DigdaException(ErrorCode.MINIGAME_INVALID_STATE)
         val p = players[userId] ?: throw DigdaException(ErrorCode.MINIGAME_NOT_PARTICIPANT)
-        if (!p.joined || userId == drawerId) return false
+        if (!p.joined || p.forfeited || userId == drawerId) return false
         val answer = word ?: return false
         val correct = normalize(text) == normalize(answer)
         if (correct) {
@@ -220,6 +267,19 @@ class CatchmindGame(
         status = Status.EXPIRED
         touch()
         return true
+    }
+
+    private fun finishNow() {
+        status = Status.FINISHED
+        drawerId = null
+        word = null
+        roundDeadline = null
+        clearStrokes()
+    }
+
+    private fun clearStrokes() {
+        strokes.clear()
+        pointCount = 0
     }
 
     private fun requireDrawer(userId: UUID) {

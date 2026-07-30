@@ -69,6 +69,20 @@ class CatchmindWsController(
         }
     }
 
+    @MessageMapping("/catchmind/{gameId}/forfeit")
+    fun forfeit(@DestinationVariable gameId: Long, principal: Principal) {
+        try {
+            catchmindService.forfeit(UUID.fromString(principal.name), gameId)
+        } catch (e: Exception) {
+            log.warn(
+                "action=catchmind_forfeit_rejected, gameId={}, userId={}, reason={}",
+                gameId,
+                UserLogKeyRegistry.of(principal.name),
+                e.message
+            )
+        }
+    }
+
     @MessageMapping("/catchmind/{gameId}/guess")
     fun guess(
         @DestinationVariable gameId: Long,

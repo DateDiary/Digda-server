@@ -153,13 +153,50 @@ class CatchmindService(
         endRound(game, CatchmindEvent.Type.ROUND_SKIPPED, answer)
     }
 
+    /**
+     * [userId] 기권 — 남은 라운드의 출제 순서/추리에서 빠진다.
+     * 출제자가 기권하면 그 라운드를 즉시 끝내고, 남은 인원이 부족하면 게임이 끝난다.
+     */
+    fun forfeit(userId: UUID, gameId: Long) {
+        val game = gameManager.get(gameId)
+        val name = game.players[userId]?.name
+        val answer = game.word
+        val wasDrawer = userId == game.drawerId
+        val outcome = game.forfeit(userId)
+        log.info(
+            "action=catchmind_forfeit, gameId={}, userId={}, outcome={}",
+            gameId,
+            UserLogKeyRegistry.of(userId),
+            outcome
+        )
+        messagingTemplate.convertAndSend(
+            topic(gameId),
+            CatchmindEvent(
+                type = CatchmindEvent.Type.FORFEITED,
+                game = CatchmindGameResponse.from(game, null),
+                userId = userId,
+                userName = name,
+                // 출제자가 빠져 라운드가 끝난 경우에만 정답을 공개한다.
+                answer = if (wasDrawer) answer else null
+            )
+        )
+        when (outcome) {
+            CatchmindGame.ForfeitOutcome.ROUND_ENDED -> advance(game)
+            CatchmindGame.ForfeitOutcome.GAME_FINISHED -> {
+                log.info("action=catchmind_finished, gameId={}, reason=forfeit", gameId)
+                broadcastSnapshot(game, CatchmindEvent.Type.FINISHED)
+            }
+            CatchmindGame.ForfeitOutcome.NONE -> Unit
+        }
+    }
+
     fun guess(userId: UUID, gameId: Long, text: String) {
         val game = gameManager.get(gameId)
         val trimmed = text.trim()
         if (trimmed.isEmpty() || trimmed.length > 40) return
         val player = game.players[userId] ?: return
-        // 출제자 본인/미참가자의 채팅은 무시 — 출제자가 정답을 흘리는 것 방지.
-        if (!player.joined || userId == game.drawerId) return
+        // 출제자 본인/미참가자/기권자의 채팅은 무시 — 출제자가 정답을 흘리는 것 방지.
+        if (!player.joined || player.forfeited || userId == game.drawerId) return
         val name = player.name
         val answer = game.word
         val correct = game.guess(userId, trimmed)
