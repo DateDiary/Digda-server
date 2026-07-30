@@ -70,7 +70,9 @@ class CatchmindGameManager {
         games.values.filter { g ->
             g.groupRoomId == groupRoomId &&
                 (g.status == CatchmindGame.Status.WAITING || g.status == CatchmindGame.Status.ACTIVE) &&
-                g.isJoined(userId)
+                g.isJoined(userId) &&
+                // 기권한 방은 재입장 목록에 다시 띄우지 않는다.
+                g.players[userId]?.forfeited != true
         }.sortedByDescending { it.lastActivityAt }
 
     /** 라운드 제한시간이 지난 진행 중 게임 목록. */
