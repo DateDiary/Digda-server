@@ -79,11 +79,33 @@ class UploadServiceImpl(
         }
     }
 
+    /**
+     * 이미지 헤더만 읽어 가로·세로를 구한다.
+     *
+     * 이전에는 ImageIO.read() 로 전체를 디코딩했는데, 이때 잡히는 힙은 파일 크기가 아니라
+     * (가로 × 세로 × 4바이트) 다. 4000×3000 사진 한 장이 약 48MB, 8000×6000 이면 약 192MB 라
+     * 업로드가 겹치면 OOM 이 나고, 디코딩에 걸리는 시간만큼 응답도 그대로 느려졌다.
+     * (크기 정보만 필요한데 픽셀을 전부 푸는 셈이었다.)
+     *
+     * ImageReader 는 픽셀을 풀지 않고 헤더만 읽으므로 원본 해상도와 무관하게 수 KB / 수 ms 로 끝난다.
+     */
     private fun readImageDimensions(file: MultipartFile): Pair<Int, Int> {
         return try {
             file.inputStream.use { stream ->
-                val image = ImageIO.read(stream) ?: return 0 to 0
-                image.width to image.height
+                ImageIO.createImageInputStream(stream)?.use { input ->
+                    val readers = ImageIO.getImageReaders(input)
+                    if (!readers.hasNext()) return 0 to 0
+
+                    val reader = readers.next()
+                    try {
+                        // seekForwardOnly=true, ignoreMetadata=true — 헤더만 보고 끝내기 위한 조합.
+                        reader.setInput(input, true, true)
+                        reader.getWidth(0) to reader.getHeight(0)
+                    } finally {
+                        // dispose 를 빼면 리더가 잡고 있는 네이티브 버퍼가 GC 까지 남는다.
+                        reader.dispose()
+                    }
+                } ?: (0 to 0)
             }
         } catch (e: Exception) {
             log.warn("Failed to read image dimensions for file '{}': {}", file.originalFilename, e.message)
