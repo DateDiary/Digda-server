@@ -19,7 +19,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     # Dockerfile 의 -Xmx240m 과 짝. 힙 외에 metaspace/코드캐시/스레드스택/다이렉트버퍼가
     # 붙어 RSS 는 힙의 1.5배 안팎이 된다. 440m 은 그걸 감안한 상한.
-    mem_limit: 440m
+    mem_limit: 520m
     memswap_limit: 1g
     depends_on:
       mysql:
