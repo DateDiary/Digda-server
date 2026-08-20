@@ -61,6 +61,10 @@ jobs:
             mkdir -p /home/ubuntu/digda
             # 로그 볼륨 마운트 지점. 미리 만들어 둬야 도커가 root 소유로 생성하지 않는다.
             mkdir -p /home/ubuntu/digda/logs
+            # MySQL 데이터 디렉터리와 덤프 보관 위치. mysql-data 는 컨테이너가
+            # uid 999 로 초기화하므로 소유권은 건드리지 않는다.
+            mkdir -p /home/ubuntu/digda/mysql-data
+            mkdir -p /home/ubuntu/digda/backup
 
       # (10) docker-compose.yml 업로드
       - name: Copy docker-compose.yml to AWS EC2 Instance
@@ -72,17 +76,15 @@ jobs:
           source: "docker-compose.yml"
           target: "/home/ubuntu/digda"
 
-      # (11) .env 파일 복사
-      - name: Copy .env file to AWS EC2 Instance
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "env/prod.env"
-          target: "/home/ubuntu/digda/.env"
-
-      # (12) 컨테이너 실행
+      # (11) 컨테이너 실행
+      #
+      # 예전에 있던 "env/prod.env → /home/ubuntu/digda/.env 복사" 스텝은 제거했다.
+      # scp-action 은 소스의 경로 구조를 유지한 채 target 디렉터리 안에 넣으므로
+      # 서버에 .env/env/prod.env 라는 '디렉터리' 가 생겼고, docker-compose 는 .env 를
+      # 파일로만 읽으므로 ${MYSQL_ROOT_PASSWORD} 같은 값이 전부 빈 문자열이 됐다.
+      # 앱이 쓰는 prod.env 는 Dockerfile 의 COPY 로 이미 이미지 안에 들어가므로
+      # 이 복사는 원래 필요 없었다. compose 용 .env(= MySQL/Redis 비밀번호)는
+      # 서버에서 직접 관리한다.
       - name: Deploy on AWS EC2 Instance
         uses: appleboy/ssh-action@master
         with:
@@ -91,7 +93,10 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /home/ubuntu/digda
-            docker-compose down || true
-            docker image prune -a -f
+            # mysql/redis 는 건드리지 않고 app 컨테이너만 교체한다.
+            # 예전처럼 `docker-compose down` 을 치면 DB 가 매 배포마다 내려갔다 오고,
+            # 쓰기 도중에 죽으면 InnoDB 복구가 돌거나 최악엔 데이터가 깨진다.
             docker pull ${{ secrets.DOCKERFILE_USERNAME }}/${{ secrets.DOCKERFILE_REPO_NAME }}:latest
-            docker-compose up -d
+            docker-compose up -d --no-deps --force-recreate app
+            # -a 를 빼서 실행 중이 아닌 mysql/redis 이미지까지 날리지 않게 한다.
+            docker image prune -f
