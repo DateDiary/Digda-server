@@ -1,4 +1,10 @@
-version: '3.8'
+# 908MB EC2 한 대에 app + mysql + redis 를 모두 올린다. 메모리가 상시 빠듯하므로
+# 세 서비스 전부 mem_limit 로 상한을 못박는다. 상한이 없으면 한 놈이 부풀 때
+# 커널 OOM killer 가 아무나(주로 제일 큰 JVM 이 아니라 MySQL 을) 죽인다.
+#
+# version 2.4 인 이유: 배포가 docker-compose(v1) 로 돌아간다. v1 에서 mem_limit /
+# oom_score_adj / depends_on.condition 을 쓰려면 2.x 포맷이어야 한다(3.x 는 무시됨).
+version: '2.4'
 
 services:
   app:
@@ -11,15 +17,76 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    # Dockerfile 의 -Xmx240m 과 짝. 힙 외에 metaspace/코드캐시/스레드스택/다이렉트버퍼가
+    # 붙어 RSS 는 힙의 1.5배 안팎이 된다. 440m 은 그걸 감안한 상한.
+    mem_limit: 520m
+    memswap_limit: 1g
     depends_on:
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
     volumes:
       # 앱이 /logs 에 날짜별 파일을 쓴다(application-prod.yml). 컨테이너가 재생성돼도
       # 호스트에 남도록 마운트 — 배포 때마다 컨테이너를 지우므로 필수.
       - ./logs:/logs
     logging:
       # stdout 로그(docker logs)는 /logs 파일 로그와 완전히 중복이라 최소한만 유지.
-      # 설정 안 하면 json-file 이 무한히 커져 디스크를 먹는다(기존 상태). 상한 = 20MB.
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  mysql:
+    image: mysql:8.0
+    container_name: digda-mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # 앱 컨테이너는 TZ=Asia/Seoul(Dockerfile) 인데 MySQL 기본은 UTC 다. 안 맞추면
+      # DB 측 NOW()/기본값이 9시간 밀린다.
+      - --default-time-zone=+09:00
+      - --max-allowed-packet=256M
+      # ── 저메모리 튜닝 (908MB 박스) ──────────────────────────────
+      # performance_schema 만 꺼도 MySQL 8 이 200MB 가까이 줄어든다. 이 한 줄이
+      # "올리면 터진다 / 안 터진다" 를 가르는 설정이다. 절대 빼지 말 것.
+      - --performance-schema=OFF
+      - --innodb-buffer-pool-size=64M
+      - --innodb-log-buffer-size=8M
+      - --innodb-flush-method=O_DIRECT
+      - --max-connections=40
+      - --table-open-cache=200
+      - --table-definition-cache=200
+      - --tmp-table-size=16M
+      - --max-heap-table-size=16M
+      - --sort-buffer-size=512K
+      - --read-buffer-size=256K
+      - --join-buffer-size=256K
+      - --thread-cache-size=8
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    # ports 를 열지 않는다. app 은 같은 compose 네트워크에서 mysql:3306 으로 붙는다.
+    # 호스트에 3306 을 노출하면 스캐너가 바로 붙는다.
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    mem_limit: 320m
+    memswap_limit: 1200m
+    # 메모리가 모자랄 때 커널이 DB 를 마지막에 고르도록 낮춘다(범위 -1000~1000).
+    oom_score_adj: -500
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      # 첫 기동은 데이터 디렉터리 초기화까지 있어 오래 걸린다. 이 시간 동안의
+      # 실패는 unhealthy 로 치지 않는다.
+      start_period: 90s
+    restart: unless-stopped
+    logging:
       driver: "json-file"
       options:
         max-size: "10m"
@@ -27,16 +94,25 @@ services:
 
   redis:
     image: redis
-    command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes" ]
-    ports:
-      - "6379:6379"
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command:
+      - "redis-server"
+      - "--requirepass"
+      - "${REDIS_PASSWORD}"
+      - "--appendonly"
+      - "yes"
+      - "--maxmemory"
+      - "64mb"
+      # 저장하는 키(리프레시 토큰 JsonWebToken 등)에 전부 TTL 이 걸려 있으므로
+      # 만료가 임박한 것부터 버린다. allkeys-* 는 쓰면 안 된다 — TTL 없는 키까지 날아간다.
+      - "--maxmemory-policy"
+      - "volatile-ttl"
+    # ports 제거: app 이 같은 네트워크에서 redis:6379 로 붙으므로 호스트 노출 불필요.
     volumes:
       - ./redis-data:/data
+    mem_limit: 100m
+    restart: unless-stopped
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "2"
-
