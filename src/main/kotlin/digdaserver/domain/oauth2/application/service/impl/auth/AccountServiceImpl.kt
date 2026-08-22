@@ -121,6 +121,18 @@ class AccountServiceImpl(
             "uid" to userId
         )
 
+        // 그룹 가계부 — 일정 bulk 삭제(cascade 미적용) 전에 지출부터 정리한다.
+        //  · 내가 만든 일정에 달린 지출은 일정과 함께 사라져야 하므로 삭제.
+        //  · 남의 일정에 내가 남긴 지출은 그룹 가계부의 과거 합계라 보존하고,
+        //    payer/created_by 참조만 끊어 user FK 를 푼다(표시는 "탈퇴한 멤버").
+        run(
+            "DELETE FROM ScheduleExpense e " +
+                "WHERE e.schedule.id IN (SELECT s.id FROM Schedule s WHERE s.createdBy.id = :uid)",
+            "uid" to userId
+        )
+        run("UPDATE ScheduleExpense e SET e.payer = null WHERE e.payer.id = :uid", "uid" to userId)
+        run("UPDATE ScheduleExpense e SET e.createdBy = null WHERE e.createdBy.id = :uid", "uid" to userId)
+
         // 내가 만든 컨텐츠 삭제 (다른 사람 일기에 단 좋아요·리액션은 cascade 가 아닌 직접 정리)
         diaryLikeRepository.deleteAllByUserId(userId)
         diaryReactionRepository.deleteAllByUserId(userId)

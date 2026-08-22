@@ -158,7 +158,16 @@ class GroupRoomChildPurger(
             "gid" to groupRoomId
         )
 
-        // 3) 알림 (group_room_id 보유 행)
+        // 3) 그룹 가계부 지출 — Schedule.expenses cascade 로도 지워지지만, 그 경로는
+        //    일정 컬렉션을 전부 로드해야 성립한다. 지출이 많은 그룹에서 삭제가 통째로
+        //    실패하는 일이 없도록 여기서 한 방에 먼저 비운다(멱등).
+        val expense = run(
+            "DELETE FROM ScheduleExpense e " +
+                "WHERE e.schedule.id IN (SELECT s.id FROM Schedule s WHERE s.groupRoom.id = :gid)",
+            "gid" to groupRoomId
+        )
+
+        // 4) 알림 (group_room_id 보유 행)
         val notification =
             run("DELETE FROM Notification n WHERE n.groupRoomId = :gid", "gid" to groupRoomId)
 
@@ -167,9 +176,9 @@ class GroupRoomChildPurger(
         log.info(
             "action=그룹방 자식 데이터 정리, groupRoomId={}, quizAttempt={}, quiz={}, equipped={}, " +
                 "ownedItem={}, character={}, diaryLike={}, diaryReaction={}, diaryComment={}, " +
-                "scheduleComment={}, notification={}",
+                "scheduleComment={}, expense={}, notification={}",
             groupRoomId, quizAttempt, quiz, equipped, ownedItem, character,
-            diaryLike, diaryReaction, diaryComment, scheduleComment, notification
+            diaryLike, diaryReaction, diaryComment, scheduleComment, expense, notification
         )
     }
 }
