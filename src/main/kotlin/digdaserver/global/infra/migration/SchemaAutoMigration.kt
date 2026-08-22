@@ -263,6 +263,38 @@ class SchemaAutoMigration(
                     KEY idx_feedback_submission_created (created_at)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """.trimIndent()
+        ),
+        // 2.4.0 그룹 가계부 — 일정에 붙는 지출 한 건.
+        //  · group_room_id/날짜를 따로 두지 않는다: 소속 그룹과 발생일은 schedule 을 타고
+        //    얻어야 일정 날짜를 옮겼을 때 월 집계가 어긋나지 않는다.
+        //  · payer_id/created_by 는 NULL 허용 — 회원탈퇴 시 금액은 그룹 가계부에 보존하고
+        //    사람만 비워 "탈퇴한 멤버"로 표시한다.
+        //  · schedule_id FK 는 ON DELETE 를 걸지 않는다. 일정 삭제는 JPA cascade
+        //    (Schedule.expenses orphanRemoval)로 지우고, DB 는 마지막 방어선으로 남긴다.
+        MissingTable(
+            table = "schedule_expense",
+            createSql = """
+                CREATE TABLE IF NOT EXISTS schedule_expense (
+                    schedule_expense_id BIGINT NOT NULL AUTO_INCREMENT,
+                    schedule_id BIGINT NOT NULL,
+                    payer_id BINARY(16) NULL,
+                    amount BIGINT NOT NULL,
+                    category VARCHAR(32) NOT NULL,
+                    memo VARCHAR(100) NULL,
+                    created_by BINARY(16) NULL,
+                    created_at DATETIME(6) NOT NULL,
+                    updated_at DATETIME(6) NOT NULL,
+                    PRIMARY KEY (schedule_expense_id),
+                    KEY idx_schedule_expense_schedule (schedule_id),
+                    KEY idx_schedule_expense_payer (payer_id),
+                    CONSTRAINT fk_schedule_expense_schedule
+                        FOREIGN KEY (schedule_id) REFERENCES schedule (schedule_id),
+                    CONSTRAINT fk_schedule_expense_payer
+                        FOREIGN KEY (payer_id) REFERENCES `user` (user_id),
+                    CONSTRAINT fk_schedule_expense_created_by
+                        FOREIGN KEY (created_by) REFERENCES `user` (user_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """.trimIndent()
         )
     )
 

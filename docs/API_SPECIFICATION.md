@@ -205,9 +205,46 @@ Authorization: Bearer {accessToken}
 | PUT | `/group-rooms/{groupRoomId}/schedules/{scheduleId}` | 작성자/방장 | 일정 수정 |
 | DELETE | `/group-rooms/{groupRoomId}/schedules/{scheduleId}` | 작성자/방장 | 일정 삭제 |
 
-**`POST` Request** — `CreateScheduleRequest`: `title`✅(≤50자), `color`✅(hex), `startDate`✅, `endDate`✅, `startTime`?, `endTime`?, `allDay`✅, `participantIds`?(UUID[])
+**`POST` Request** — `CreateScheduleRequest`: `title`✅(≤50자), `color`✅(hex), `startDate`✅, `endDate`✅, `startTime`?, `endTime`?, `allDay`✅, `participantIds`?(UUID[]), `expenses`?(ExpenseWriteRequest[])
 
-**관련 에러**: `SCHEDULE_NOT_FOUND`, `END_DATE_BEFORE_START`, `END_TIME_BEFORE_START`, `INVALID_PARTICIPANT`
+**`ExpenseWriteRequest`** — `amount`✅(원, 1~9,999,999,999), `category`(`FOOD`/`TRANSPORT`/`LODGING`/`SHOPPING`/`ETC`, 기본 `ETC`), `payerId`?(UUID, 그룹 멤버), `memo`?(≤100자)
+
+> `PUT` 의 `expenses` 는 **전체 교체**다. 생략(`null`)하면 지출을 건드리지 않고, 빈 배열을 보내면 그 일정의 지출이 모두 삭제된다.
+> 일정 복사(`/copy`)는 지출도 함께 복제한다.
+
+**Response** — `ScheduleResponse` 에 `expenses`(ExpenseResponse[]) 와 `expenseTotal`(합계) 이 포함된다. 차단/신고로 숨겨진 일정은 둘 다 비워져 내려간다.
+
+**관련 에러**: `SCHEDULE_NOT_FOUND`, `END_DATE_BEFORE_START`, `END_TIME_BEFORE_START`, `INVALID_PARTICIPANT`, `EXPENSE_AMOUNT_INVALID`, `EXPENSE_MEMO_TOO_LONG`, `EXPENSE_LIMIT_EXCEEDED`, `INVALID_EXPENSE_PAYER`
+
+---
+
+### 💰 6-1. Ledger (그룹 가계부)
+
+| 메서드 | 경로 | 권한 | 설명 |
+|--------|------|:---:|------|
+| GET | `/group-rooms/{groupRoomId}/ledger` | 멤버 | 월 요약 (`year`,`month`) |
+
+지출 쓰기는 전용 엔드포인트가 없다 — 일정 생성/수정에 `expenses` 로 함께 실린다.
+일정과 금액이 한 화면에서 저장되기 때문에, 따로 두면 "일정은 저장됐는데 금액만 실패"하는 반쪽 저장이 생긴다.
+
+**Response** — `GroupLedgerResponse`
+
+| 필드 | 설명 |
+|------|------|
+| `totalAmount` | 이 달 총 지출 |
+| `prevMonthTotal` | 지난달 총 지출 (증감 표시용) |
+| `allTimeTotal` | 그룹 누적 지출 |
+| `entryCount` | 이 달 지출 건수 |
+| `categories[]` | 분류별 `{category, label, amount, ratio}` — 금액 내림차순, 지출 없는 분류는 제외 |
+| `members[]` | 낸 사람별 `{payer, amount, ratio}` — `payer=null` 은 탈퇴 멤버·미지정 |
+| `schedules[]` | 일정별 `{scheduleId, title, color, startDate, amount, entryCount}` |
+| `daily[]` | 날짜별 `{date, amount}` — 지출 있는 날만 |
+
+> **날짜 기준은 일정의 시작일**이다. 기간 일정의 금액은 시작한 달에 한 번만 잡히고,
+> 일정 날짜를 옮기면 집계도 따라 옮겨간다(지출에 날짜를 따로 저장하지 않는 이유).
+> `ratio` 는 0.0~1.0 실수로 서버가 계산한다 — 총액 0 일 때 앱에서 NaN 이 나오지 않도록 나눗셈을 한 곳에 모았다.
+
+**관련 에러**: `GROUP_ROOM_NOT_FOUND`, `GROUP_ROOM_ALREADY_DELETED`, `NOT_GROUP_ROOM_MEMBER`, `INVALID_PARAMETER`(month 범위)
 
 ---
 

@@ -4,6 +4,9 @@ import digdaserver.domain.block.application.service.ContentVisibilityService
 import digdaserver.domain.comment.domain.entity.CommentTargetType
 import digdaserver.domain.comment.domain.repository.CommentRepository
 import digdaserver.domain.group_room.domain.repository.GroupRoomRepository
+import digdaserver.domain.ledger.application.service.ScheduleExpenseWriter
+import digdaserver.domain.ledger.domain.entity.ScheduleExpense
+import digdaserver.domain.ledger.domain.repository.ScheduleExpenseRepository
 import digdaserver.domain.log.application.service.UserActionLogService
 import digdaserver.domain.log.domain.entity.UserAction
 import digdaserver.domain.membership.domain.repository.MembershipRepository
@@ -40,7 +43,9 @@ class ScheduleServiceImpl(
     private val userRepository: UserRepository,
     private val notificationService: NotificationService,
     private val userActionLogService: UserActionLogService,
-    private val contentVisibilityService: ContentVisibilityService
+    private val contentVisibilityService: ContentVisibilityService,
+    private val expenseRepository: ScheduleExpenseRepository,
+    private val expenseWriter: ScheduleExpenseWriter
 ) : ScheduleService {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -75,12 +80,22 @@ class ScheduleServiceImpl(
             emptyMap()
         }
 
+        // 가계부 — 일정별 지출을 한 방에 받아 메모리에서 묶는다(일정 수만큼 쿼리 나가는 N+1 방지).
+        val expenseMap = loadExpenseMap(scheduleIds)
+
         return ScheduleListResponse(
             schedules = schedules.map { schedule ->
                 val commentCount = commentCountMap[schedule.id] ?: 0
-                ScheduleResponse.from(schedule, commentCount)
+                ScheduleResponse.from(schedule, commentCount, expenseMap[schedule.id] ?: emptyList())
             }
         )
+    }
+
+    /** 일정 id 묶음 → 지출 목록. 빈 목록이면 쿼리를 아예 보내지 않는다. */
+    private fun loadExpenseMap(scheduleIds: List<Long>): Map<Long, List<ScheduleExpense>> {
+        if (scheduleIds.isEmpty()) return emptyMap()
+        return expenseRepository.findAllByScheduleIdIn(scheduleIds)
+            .groupBy { it.schedule.id }
     }
 
     override fun getScheduleDetail(userId: UUID, groupRoomId: Long, scheduleId: Long): ScheduleDetailResponse {
@@ -99,8 +114,10 @@ class ScheduleServiceImpl(
         val comments = commentRepository.findAllByTargetTypeAndTargetIdOrderByCreatedAtAsc(CommentTargetType.SCHEDULE, scheduleId)
 
         // 차단/신고 숨김 — 일정 본문(직접 접근 방어)과 차단 사용자 댓글을 비워 내려보낸다.
+        val expenses = expenseRepository.findAllByScheduleId(scheduleId)
+
         val visibility = contentVisibilityService.forViewer(userId)
-        val scheduleResponse = ScheduleResponse.from(schedule, commentCount).let { resp ->
+        val scheduleResponse = ScheduleResponse.from(schedule, commentCount, expenses).let { resp ->
             val reason = visibility.scheduleHiddenReason(schedule.id, schedule.createdBy.id)
             if (reason != null) resp.asHidden(reason) else resp
         }
@@ -150,6 +167,12 @@ class ScheduleServiceImpl(
             addParticipants(schedule, groupRoomId, ids)
         }
 
+        // 가계부 — 생성 시엔 항상 "없음"에서 시작하므로 보낸 목록이 곧 전체다.
+        val expenses = request.expenses ?: emptyList()
+        if (expenses.isNotEmpty()) {
+            expenseWriter.replaceAll(schedule, groupRoomId, expenses, user)
+        }
+
         groupRoom.updateLastActivity()
 
         val participantIds = request.participantIds ?: emptyList()
@@ -171,7 +194,7 @@ class ScheduleServiceImpl(
             detail = "groupRoomId=$groupRoomId, title=${schedule.title}"
         )
 
-        return ScheduleResponse.from(schedule, 0)
+        return ScheduleResponse.from(schedule, 0, expenseRepository.findAllByScheduleId(schedule.id))
     }
 
     @Transactional
@@ -225,6 +248,8 @@ class ScheduleServiceImpl(
                 )
             )
             addParticipants(copy, groupRoomId, participantIds)
+            // 가계부도 함께 복사 — 정기 지출(월세·구독 등)을 매달 다시 입력하지 않게 한다.
+            expenseWriter.copyAll(source, copy, user)
             copy
         }
 
@@ -240,8 +265,9 @@ class ScheduleServiceImpl(
             detail = "groupRoomId=$groupRoomId, title=${source.title}, copiedTo=${dates.size} dates"
         )
 
+        val copiedExpenses = loadExpenseMap(copies.map { it.id })
         return ScheduleListResponse(
-            schedules = copies.map { ScheduleResponse.from(it, 0) }
+            schedules = copies.map { ScheduleResponse.from(it, 0, copiedExpenses[it.id] ?: emptyList()) }
         )
     }
 
@@ -294,6 +320,16 @@ class ScheduleServiceImpl(
             toAdd
         } ?: emptyList()
 
+        // 가계부 — expenses 를 보낸 경우에만 통째로 교체한다.
+        // null(미전송) 과 빈 배열(전부 삭제) 은 다른 의미다: 일정 제목만 고치는 요청이
+        // 지출을 조용히 날려버리지 않도록 여기서 구분한다.
+        request.expenses?.let { list ->
+            val author = userRepository.findById(userId)
+                .orElseThrow { DigdaException(ErrorCode.USER_NOT_FOUND) }
+            if (author.restricted) throw DigdaException(ErrorCode.USER_RESTRICTED)
+            expenseWriter.replaceAll(schedule, groupRoomId, list, author)
+        }
+
         groupRoom.updateLastActivity()
 
         if (addedParticipantIds.isNotEmpty()) {
@@ -307,7 +343,11 @@ class ScheduleServiceImpl(
         }
 
         val commentCount = commentRepository.countByTargetTypeAndTargetId(CommentTargetType.SCHEDULE, scheduleId)
-        return ScheduleResponse.from(schedule, commentCount)
+        return ScheduleResponse.from(
+            schedule,
+            commentCount,
+            expenseRepository.findAllByScheduleId(scheduleId)
+        )
     }
 
     @Transactional
