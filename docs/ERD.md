@@ -1,6 +1,6 @@
 # DigDa ERD (Entity Relationship Diagram)
 
-> 총 **39개 MySQL 테이블** + **2개 Redis 엔티티**
+> 총 **40개 MySQL 테이블** + **2개 Redis 엔티티**
 > `user`·`group_room` 두 축을 중심으로 일정/일기/할일/댓글, 그룹 캐릭터(모찌)·퀴즈·상점, 칭호,
 > 신고/차단/숨김, 고객센터 문의, 비로그인 삭제 요청, 그리고 어드민(자격증명/공지/감사 로그/앱 설정)이 붙는다.
 >
@@ -103,6 +103,18 @@ erDiagram
         bigint schedule_participant_id PK "참여자 ID"
         bigint schedule_id FK "일정 ID"
         binary_16 user_id FK "사용자 UUID"
+    }
+
+    schedule_expense["schedule_expense (그룹 가계부 지출)"] {
+        bigint schedule_expense_id PK "지출 ID"
+        bigint schedule_id FK "일정 ID"
+        binary_16 payer_id FK "낸 사람 UUID (nullable, 탈퇴/미지정)"
+        bigint amount "금액 (원)"
+        varchar category "분류 (FOOD/TRANSPORT/LODGING/SHOPPING/ETC)"
+        varchar memo "내용 (최대 100자, nullable)"
+        binary_16 created_by FK "작성자 UUID (nullable)"
+        datetime created_at "생성일"
+        datetime updated_at "수정일"
     }
 
     diary["diary (일기)"] {
@@ -457,6 +469,9 @@ erDiagram
     schedule_participant }o--|| user : "참여 사용자"
     schedule }o--|| user : "작성자"
 
+    schedule ||--o{ schedule_expense : "지출(가계부)"
+    schedule_expense }o--o| user : "낸 사람"
+
     diary ||--o{ diary_image : "이미지"
     diary ||--o{ diary_like : "좋아요"
     diary ||--o{ diary_reaction : "리액션"
@@ -501,7 +516,7 @@ erDiagram
 
 ---
 
-## 테이블 요약 (39개)
+## 테이블 요약 (40개)
 
 ### 사용자 · 인증
 
@@ -522,6 +537,7 @@ erDiagram
 | 8 | `invite_code` | 초대 코드 (6자리, 만료) | group_room N:1 |
 | 9 | `schedule` | 일정 | group_room N:1, user N:1 |
 | 10 | `schedule_participant` | 일정 참여자 | schedule N:1, user N:1 |
+| 10-1 | `schedule_expense` | 그룹 가계부 지출 (일정에 매달림) | schedule N:1, user N:1 (nullable) |
 | 11 | `diary` | 일기 (날씨/기분/지역 포함) | group_room N:1, user N:1 |
 | 12 | `diary_image` | 일기 이미지 (정렬순) | diary 1:N |
 | 13 | `diary_like` | 일기 좋아요 | diary N:1, user N:1 |
@@ -583,6 +599,7 @@ erDiagram
 | `CharacterStage` | EGG(Lv.1), SPROUT(3), BLOOM(6), BLOSSOM(10), GLOW(15), MASTER(20) | group_character.stage |
 | `QuizCategory` | PERSONAL, MEMORY, HOBBY, FAVORITE, GENERAL | character_quiz.category |
 | `ShopItemType` | SKIN, HAT, GLASSES, HAIRPIN, ACCESSORY, MISC | shop_item.item_type |
+| `ExpenseCategory` | FOOD, TRANSPORT, LODGING, SHOPPING, ETC | schedule_expense.category |
 | `ReportTargetType` | DIARY, COMMENT, SCHEDULE, USER | report.target_type |
 | `ReportReason` | SPAM, ABUSE, SEXUAL, VIOLENCE, PRIVACY, ETC | report.reason |
 | `ReportStatus` | PENDING, RESOLVED, DISMISSED | report.status |

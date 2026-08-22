@@ -1,6 +1,7 @@
 package digdaserver.domain.schedule.domain.entity
 
 import digdaserver.domain.group_room.domain.entity.GroupRoom
+import digdaserver.domain.ledger.domain.entity.ScheduleExpense
 import digdaserver.domain.user.domain.entity.User
 import digdaserver.global.common.entity.BaseTimeEntity
 import jakarta.persistence.CascadeType
@@ -59,6 +60,17 @@ class Schedule(
 
     @OneToMany(mappedBy = "schedule", cascade = [CascadeType.ALL], orphanRemoval = true)
     val participants: MutableList<ScheduleParticipant> = mutableListOf()
+
+    /**
+     * 그룹 가계부 지출.
+     *
+     * 읽기/쓰기는 전부 ScheduleExpenseRepository 를 통해 하고 이 컬렉션은 건드리지 않는다
+     * (컬렉션을 로드하지 않으므로 orphanRemoval 스냅샷 비교와 충돌하지 않는다).
+     * 여기 매핑을 두는 목적은 **삭제 전파 하나** — 일정/그룹방이 지워질 때 지출이 FK 로
+     * 남아 삭제가 실패하는 것을 막는다.
+     */
+    @OneToMany(mappedBy = "schedule", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val expenses: MutableList<ScheduleExpense> = mutableListOf()
 
     fun update(
         title: String?,

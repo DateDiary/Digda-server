@@ -72,6 +72,12 @@ enum class ErrorCode(
     SCHEDULE_COPY_DATES_EMPTY("SCHEDULE_COPY_DATES_EMPTY", "복사할 날짜를 1개 이상 선택해 주세요.", 400),
     SCHEDULE_COPY_LIMIT_EXCEEDED("SCHEDULE_COPY_LIMIT_EXCEEDED", "일정 복사는 한 번에 최대 31개 날짜까지 가능합니다.", 400),
 
+    // ── Ledger (그룹 가계부) ──
+    EXPENSE_AMOUNT_INVALID("EXPENSE_AMOUNT_INVALID", "금액은 1원 이상 99억원 이하로 입력해 주세요.", 400),
+    EXPENSE_MEMO_TOO_LONG("EXPENSE_MEMO_TOO_LONG", "지출 내용은 100자 이하여야 합니다.", 400),
+    EXPENSE_LIMIT_EXCEEDED("EXPENSE_LIMIT_EXCEEDED", "한 일정에는 금액을 최대 30개까지 추가할 수 있습니다.", 400),
+    INVALID_EXPENSE_PAYER("INVALID_EXPENSE_PAYER", "돈을 낸 사람이 그룹 구성원이 아닙니다.", 400),
+
     // ── Diary ──
     DIARY_NOT_FOUND("DIARY_NOT_FOUND", "존재하지 않는 일기입니다.", 404),
     FUTURE_DATE_NOT_ALLOWED("FUTURE_DATE_NOT_ALLOWED", "미래 날짜에는 일기를 작성할 수 없습니다.", 400),
