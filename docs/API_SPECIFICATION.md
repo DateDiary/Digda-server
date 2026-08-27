@@ -250,14 +250,16 @@ Authorization: Bearer {accessToken}
 | `members[]` | 낸 사람별 `{payer, amount, ratio}` — `payer=null` 은 탈퇴 멤버·미지정 |
 | `schedules[]` | 일정별 `{scheduleId, title, color, startDate, amount, entryCount}` |
 | `daily[]` | 날짜별 `{date, amount}` — 지출 있는 날만 |
-| `firstEntryMonth` | 기록이 있는 첫 달 `yyyy-MM` — 지출이 하나도 없으면 `null` |
-| `lastEntryMonth` | 기록이 있는 마지막 달 `yyyy-MM` — 지출이 하나도 없으면 `null` |
+| `entryMonths[]` | 기록이 있는 달 전부 `yyyy-MM` — 오름차순. 지출이 없으면 `[]` |
+| `firstEntryMonth` | `entryMonths` 의 첫 값 — 지출이 하나도 없으면 `null` |
+| `lastEntryMonth` | `entryMonths` 의 마지막 값 — 지출이 하나도 없으면 `null` |
 
 > **날짜 기준은 일정의 시작일**이다. 기간 일정의 금액은 시작한 달에 한 번만 잡히고,
 > 일정 날짜를 옮기면 집계도 따라 옮겨간다(지출에 날짜를 따로 저장하지 않는 이유).
 > `ratio` 는 0.0~1.0 실수로 서버가 계산한다 — 총액 0 일 때 앱에서 NaN 이 나오지 않도록 나눗셈을 한 곳에 모았다.
-> `firstEntryMonth`~`lastEntryMonth` 는 앱의 월 이동 범위다. **오늘이 낀 달을 범위에 넣을지는 앱이 정한다** —
-> 기기 시각 기준이라 서버가 단정하지 않는다.
+> `entryMonths` 가 앱의 **고를 수 있는 달** 목록이다. 양 끝(`firstEntryMonth`~`lastEntryMonth`)만 주면
+> 그 사이의 한 푼도 안 쓴 달까지 눌리게 되고, 눌러 봐야 빈 화면이다.
+> **오늘이 낀 달을 고를 수 있게 할지는 앱이 정한다** — 기기 시각 기준이라 서버가 단정하지 않는다.
 
 **관련 에러**: `GROUP_ROOM_NOT_FOUND`, `GROUP_ROOM_ALREADY_DELETED`, `NOT_GROUP_ROOM_MEMBER`, `INVALID_PARAMETER`(month 범위),
 `SCHEDULE_NOT_FOUND`(단건 추가 — 다른 그룹의 일정 id 포함), `USER_RESTRICTED`, `EXPENSE_AMOUNT_INVALID`, `EXPENSE_MEMO_TOO_LONG`, `EXPENSE_LIMIT_EXCEEDED`, `INVALID_EXPENSE_PAYER`

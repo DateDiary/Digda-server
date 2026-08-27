@@ -30,8 +30,8 @@ class LedgerController(
     @Operation(
         summary = "그룹 가계부 월 요약",
         description = "해당 월의 총 지출과 분류별·멤버별·일정별·날짜별 집계를 한 번에 내려줍니다. " +
-            "지출 날짜 기준은 일정의 시작일입니다. 기록이 있는 첫/마지막 달(firstEntryMonth·lastEntryMonth)도 함께 내려가며, " +
-            "앱은 이 값으로 월 이동 범위를 잡습니다."
+            "지출 날짜 기준은 일정의 시작일입니다. 기록이 있는 달 목록(entryMonths)과 그 양 끝(firstEntryMonth·lastEntryMonth)도 " +
+            "함께 내려가며, 앱은 이 값으로 고를 수 있는 달을 정합니다."
     )
     @GetMapping("/group-rooms/{groupRoomId}/ledger")
     fun getMonthlyLedger(
