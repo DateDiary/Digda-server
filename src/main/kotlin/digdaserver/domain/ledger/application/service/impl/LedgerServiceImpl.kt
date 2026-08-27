@@ -68,6 +68,12 @@ class LedgerServiceImpl(
 
         val total = expenses.sumOf { it.amount }
 
+        // 기록이 있는 달 목록 — 앱의 달 선택 화면이 고를 수 있는 달을 여기서 정한다.
+        val entryMonths = expenseRepository.findEntryYearMonths(groupRoomId)
+            .map { row -> YearMonth.of((row[0] as Number).toInt(), (row[1] as Number).toInt()) }
+            .sorted()
+            .map { it.format(MONTH_FORMAT) }
+
         return GroupLedgerResponse(
             year = year,
             month = month,
@@ -79,8 +85,9 @@ class LedgerServiceImpl(
             members = buildMemberStats(expenses, total),
             schedules = buildScheduleStats(expenses),
             daily = buildDailyStats(expenses),
-            firstEntryMonth = expenseRepository.findFirstEntryDate(groupRoomId)?.format(MONTH_FORMAT),
-            lastEntryMonth = expenseRepository.findLastEntryDate(groupRoomId)?.format(MONTH_FORMAT)
+            entryMonths = entryMonths,
+            firstEntryMonth = entryMonths.firstOrNull(),
+            lastEntryMonth = entryMonths.lastOrNull()
         )
     }
 
