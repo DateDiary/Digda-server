@@ -26,7 +26,17 @@ data class GroupLedgerResponse(
     /** 이 달 지출이 있는 일정 — 금액 내림차순. */
     val schedules: List<LedgerScheduleStat>,
     /** 이 달 날짜별 합계 — 지출이 있는 날만. 막대 그래프용. */
-    val daily: List<LedgerDailyStat>
+    val daily: List<LedgerDailyStat>,
+    /**
+     * 가계부에 기록이 남아 있는 첫 달 (`yyyy-MM`). 지출이 하나도 없으면 null.
+     *
+     * 앱의 월 이동 범위를 이 값으로 잡는다. "미래는 못 본다" 같은 규칙을 앱에 박아두면
+     * 다음 달 여행비를 미리 적어둔 그룹이 정작 자기가 쓴 달을 보지 못한다.
+     * 오늘이 낀 달까지 범위에 넣을지는 앱이 정한다 — 기기 시각 기준이라 서버가 단정하지 않는다.
+     */
+    val firstEntryMonth: String?,
+    /** 가계부에 기록이 남아 있는 마지막 달 (`yyyy-MM`). 지출이 하나도 없으면 null. */
+    val lastEntryMonth: String?
 )
 
 data class LedgerCategoryStat(
