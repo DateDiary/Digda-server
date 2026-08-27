@@ -223,9 +223,20 @@ Authorization: Bearer {accessToken}
 | 메서드 | 경로 | 권한 | 설명 |
 |--------|------|:---:|------|
 | GET | `/group-rooms/{groupRoomId}/ledger` | 멤버 | 월 요약 (`year`,`month`) |
+| POST | `/group-rooms/{groupRoomId}/schedules/{scheduleId}/expenses` | 멤버 | 일정에 지출 **단건** 추가 (즉시 저장) |
 
-지출 쓰기는 전용 엔드포인트가 없다 — 일정 생성/수정에 `expenses` 로 함께 실린다.
-일정과 금액이 한 화면에서 저장되기 때문에, 따로 두면 "일정은 저장됐는데 금액만 실패"하는 반쪽 저장이 생긴다.
+지출 쓰기 경로는 두 가지다.
+
+1. **일정 생성/수정에 `expenses` 로 함께** — 일정과 금액을 한 화면에서 같이 저장할 때. **전체 교체**다.
+2. **단건 추가 `POST .../expenses`** — 일정 상세에서 금액만 바로 적을 때. 기존 항목은 건드리지 않고 하나만 덧붙인다.
+
+두 번째가 필요한 이유: 일정 상세 화면은 지출 목록 전부를 편집 상태로 들고 있지 않다. 그 화면에서
+전체 교체(PUT)를 시키면, 그 사이 다른 멤버가 넣은 금액을 아직 못 받아본 채로 덮어 지우게 된다.
+
+**`POST` Request** — `ExpenseWriteRequest`: `amount`✅(1~9,999,999,999), `category`(기본 `ETC`), `payerId`?, `memo`?(≤100자)
+
+**`POST` Response** (`201`) — `ScheduleExpenseListResponse`: `{scheduleId, expenses[], expenseTotal}`
+한 건만이 아니라 그 일정의 지출 **목록 전체와 합계**를 돌려준다 — 앱이 합계를 스스로 더하지 않고 화면을 그대로 다시 그리게 하기 위함.
 
 **Response** — `GroupLedgerResponse`
 
@@ -239,12 +250,17 @@ Authorization: Bearer {accessToken}
 | `members[]` | 낸 사람별 `{payer, amount, ratio}` — `payer=null` 은 탈퇴 멤버·미지정 |
 | `schedules[]` | 일정별 `{scheduleId, title, color, startDate, amount, entryCount}` |
 | `daily[]` | 날짜별 `{date, amount}` — 지출 있는 날만 |
+| `firstEntryMonth` | 기록이 있는 첫 달 `yyyy-MM` — 지출이 하나도 없으면 `null` |
+| `lastEntryMonth` | 기록이 있는 마지막 달 `yyyy-MM` — 지출이 하나도 없으면 `null` |
 
 > **날짜 기준은 일정의 시작일**이다. 기간 일정의 금액은 시작한 달에 한 번만 잡히고,
 > 일정 날짜를 옮기면 집계도 따라 옮겨간다(지출에 날짜를 따로 저장하지 않는 이유).
 > `ratio` 는 0.0~1.0 실수로 서버가 계산한다 — 총액 0 일 때 앱에서 NaN 이 나오지 않도록 나눗셈을 한 곳에 모았다.
+> `firstEntryMonth`~`lastEntryMonth` 는 앱의 월 이동 범위다. **오늘이 낀 달을 범위에 넣을지는 앱이 정한다** —
+> 기기 시각 기준이라 서버가 단정하지 않는다.
 
-**관련 에러**: `GROUP_ROOM_NOT_FOUND`, `GROUP_ROOM_ALREADY_DELETED`, `NOT_GROUP_ROOM_MEMBER`, `INVALID_PARAMETER`(month 범위)
+**관련 에러**: `GROUP_ROOM_NOT_FOUND`, `GROUP_ROOM_ALREADY_DELETED`, `NOT_GROUP_ROOM_MEMBER`, `INVALID_PARAMETER`(month 범위),
+`SCHEDULE_NOT_FOUND`(단건 추가 — 다른 그룹의 일정 id 포함), `USER_RESTRICTED`, `EXPENSE_AMOUNT_INVALID`, `EXPENSE_MEMO_TOO_LONG`, `EXPENSE_LIMIT_EXCEEDED`, `INVALID_EXPENSE_PAYER`
 
 ---
 
