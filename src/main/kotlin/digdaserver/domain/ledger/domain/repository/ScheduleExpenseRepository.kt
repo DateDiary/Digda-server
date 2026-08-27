@@ -41,27 +41,23 @@ interface ScheduleExpenseRepository : JpaRepository<ScheduleExpense, Long> {
     ): List<ScheduleExpense>
 
     /**
-     * 가계부에 기록이 있는 가장 이른/늦은 날짜 — 월 이동 범위의 양 끝을 잡는 데 쓴다.
-     * 지출이 하나도 없으면 NULL. 날짜 기준은 집계와 같은 일정 시작일이라, 화면에서
-     * 이동할 수 있는 달과 실제로 숫자가 뜨는 달이 어긋나지 않는다.
+     * 가계부에 기록이 있는 달 전부 — `[연, 월]` 쌍의 목록. 지출이 없으면 빈 목록.
+     *
+     * 월 이동 범위(첫 달·마지막 달)와 "이 달엔 쓴 게 있나"를 모두 이 하나로 얻는다.
+     * 달 선택 화면이 기록 없는 달을 눌리지 않게 막으려면 양 끝만으로는 부족하다 —
+     * 2025.03~2027.12 안에도 한 푼도 안 쓴 달이 얼마든지 있다.
+     *
+     * 날짜 기준은 집계와 같은 일정 시작일이라, 고를 수 있는 달과 실제로 숫자가 뜨는
+     * 달이 어긋나지 않는다.
      */
     @Query(
         """
-        SELECT MIN(s.startDate) FROM ScheduleExpense e
+        SELECT DISTINCT YEAR(s.startDate), MONTH(s.startDate) FROM ScheduleExpense e
         JOIN e.schedule s
         WHERE s.groupRoom.id = :groupRoomId
         """
     )
-    fun findFirstEntryDate(@Param("groupRoomId") groupRoomId: Long): LocalDate?
-
-    @Query(
-        """
-        SELECT MAX(s.startDate) FROM ScheduleExpense e
-        JOIN e.schedule s
-        WHERE s.groupRoom.id = :groupRoomId
-        """
-    )
-    fun findLastEntryDate(@Param("groupRoomId") groupRoomId: Long): LocalDate?
+    fun findEntryYearMonths(@Param("groupRoomId") groupRoomId: Long): List<Array<Any>>
 
     /** 그룹 누적 지출 합계. 지출이 하나도 없으면 NULL 이 나오므로 호출부에서 0 처리. */
     @Query(
