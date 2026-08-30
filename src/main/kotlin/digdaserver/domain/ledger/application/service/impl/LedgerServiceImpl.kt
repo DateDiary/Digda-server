@@ -2,22 +2,28 @@ package digdaserver.domain.ledger.application.service.impl
 
 import digdaserver.domain.group_room.domain.repository.GroupRoomRepository
 import digdaserver.domain.ledger.application.service.LedgerService
+import digdaserver.domain.ledger.application.service.ScheduleExpenseWriter
 import digdaserver.domain.ledger.domain.entity.ExpenseCategory
 import digdaserver.domain.ledger.domain.entity.ScheduleExpense
 import digdaserver.domain.ledger.domain.repository.ScheduleExpenseRepository
+import digdaserver.domain.ledger.presentation.dto.req.ExpenseWriteRequest
 import digdaserver.domain.ledger.presentation.dto.res.GroupLedgerResponse
 import digdaserver.domain.ledger.presentation.dto.res.LedgerCategoryStat
 import digdaserver.domain.ledger.presentation.dto.res.LedgerDailyStat
 import digdaserver.domain.ledger.presentation.dto.res.LedgerMemberStat
 import digdaserver.domain.ledger.presentation.dto.res.LedgerScheduleStat
+import digdaserver.domain.ledger.presentation.dto.res.ScheduleExpenseListResponse
 import digdaserver.domain.membership.domain.repository.MembershipRepository
+import digdaserver.domain.schedule.domain.repository.ScheduleRepository
 import digdaserver.domain.schedule.presentation.dto.res.UserSummary
+import digdaserver.domain.user.domain.repository.UserRepository
 import digdaserver.global.infra.exception.error.DigdaException
 import digdaserver.global.infra.exception.error.ErrorCode
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Service
@@ -25,8 +31,16 @@ import java.util.UUID
 class LedgerServiceImpl(
     private val expenseRepository: ScheduleExpenseRepository,
     private val groupRoomRepository: GroupRoomRepository,
-    private val membershipRepository: MembershipRepository
+    private val membershipRepository: MembershipRepository,
+    private val scheduleRepository: ScheduleRepository,
+    private val userRepository: UserRepository,
+    private val expenseWriter: ScheduleExpenseWriter
 ) : LedgerService {
+
+    companion object {
+        /** 월 범위 필드(`firstEntryMonth`/`lastEntryMonth`) 표기 — `2025-03`. */
+        private val MONTH_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM")
+    }
 
     override fun getMonthlyLedger(
         userId: UUID,
@@ -54,6 +68,12 @@ class LedgerServiceImpl(
 
         val total = expenses.sumOf { it.amount }
 
+        // 기록이 있는 달 목록 — 앱의 달 선택 화면이 고를 수 있는 달을 여기서 정한다.
+        val entryMonths = expenseRepository.findEntryYearMonths(groupRoomId)
+            .map { row -> YearMonth.of((row[0] as Number).toInt(), (row[1] as Number).toInt()) }
+            .sorted()
+            .map { it.format(MONTH_FORMAT) }
+
         return GroupLedgerResponse(
             year = year,
             month = month,
@@ -64,7 +84,43 @@ class LedgerServiceImpl(
             categories = buildCategoryStats(expenses, total),
             members = buildMemberStats(expenses, total),
             schedules = buildScheduleStats(expenses),
-            daily = buildDailyStats(expenses)
+            daily = buildDailyStats(expenses),
+            entryMonths = entryMonths,
+            firstEntryMonth = entryMonths.firstOrNull(),
+            lastEntryMonth = entryMonths.lastOrNull()
+        )
+    }
+
+    @Transactional
+    override fun addScheduleExpense(
+        userId: UUID,
+        groupRoomId: Long,
+        scheduleId: Long,
+        request: ExpenseWriteRequest
+    ): ScheduleExpenseListResponse {
+        val groupRoom = groupRoomRepository.findById(groupRoomId)
+            .orElseThrow { DigdaException(ErrorCode.GROUP_ROOM_NOT_FOUND) }
+        if (groupRoom.deletedAt != null) throw DigdaException(ErrorCode.GROUP_ROOM_ALREADY_DELETED)
+
+        // 일정과 같은 규칙 — 그룹 멤버면 누구나 금액을 적을 수 있다(작성자 제한 없음).
+        membershipRepository.findByGroupRoomIdAndUserId(groupRoomId, userId)
+            .orElseThrow { DigdaException(ErrorCode.NOT_GROUP_ROOM_MEMBER) }
+
+        val schedule = scheduleRepository.findById(scheduleId)
+            .orElseThrow { DigdaException(ErrorCode.SCHEDULE_NOT_FOUND) }
+        // 다른 그룹의 일정 id 로 남의 가계부에 금액을 꽂지 못하게 소속을 확인한다.
+        if (schedule.groupRoom.id != groupRoomId) throw DigdaException(ErrorCode.SCHEDULE_NOT_FOUND)
+
+        val author = userRepository.findById(userId)
+            .orElseThrow { DigdaException(ErrorCode.USER_NOT_FOUND) }
+        if (author.restricted) throw DigdaException(ErrorCode.USER_RESTRICTED)
+
+        expenseWriter.append(schedule, groupRoomId, request, author)
+        groupRoom.updateLastActivity()
+
+        return ScheduleExpenseListResponse.from(
+            scheduleId,
+            expenseRepository.findAllByScheduleId(scheduleId)
         )
     }
 

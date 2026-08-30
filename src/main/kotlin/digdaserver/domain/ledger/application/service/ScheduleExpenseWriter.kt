@@ -86,17 +86,47 @@ class ScheduleExpenseWriter(
         )
     }
 
+    /**
+     * 일정에 지출 **한 건만** 덧붙인다. [replaceAll] 과 달리 기존 항목을 건드리지 않는다.
+     *
+     * 일정 상세에서 금액을 바로 저장하는 경로용. 그 화면은 목록 전체를 들고 있지 않아
+     * 전체 교체를 시키면 아직 못 받아본 다른 멤버의 지출을 덮어 지운다.
+     */
+    fun append(
+        schedule: Schedule,
+        groupRoomId: Long,
+        request: ExpenseWriteRequest,
+        author: User
+    ): ScheduleExpense {
+        validateOne(request)
+        if (expenseRepository.countByScheduleId(schedule.id) >= MAX_EXPENSES_PER_SCHEDULE) {
+            throw DigdaException(ErrorCode.EXPENSE_LIMIT_EXCEEDED)
+        }
+        return expenseRepository.save(
+            ScheduleExpense(
+                schedule = schedule,
+                payer = resolvePayer(groupRoomId, request),
+                amount = request.amount,
+                category = request.category,
+                memo = request.memo?.trim()?.takeIf { it.isNotEmpty() },
+                createdBy = author
+            )
+        )
+    }
+
     private fun validate(requests: List<ExpenseWriteRequest>) {
         if (requests.size > MAX_EXPENSES_PER_SCHEDULE) {
             throw DigdaException(ErrorCode.EXPENSE_LIMIT_EXCEEDED)
         }
-        requests.forEach { req ->
-            if (req.amount <= 0 || req.amount > MAX_AMOUNT) {
-                throw DigdaException(ErrorCode.EXPENSE_AMOUNT_INVALID)
-            }
-            if ((req.memo?.trim()?.length ?: 0) > MAX_MEMO_LENGTH) {
-                throw DigdaException(ErrorCode.EXPENSE_MEMO_TOO_LONG)
-            }
+        requests.forEach { validateOne(it) }
+    }
+
+    private fun validateOne(req: ExpenseWriteRequest) {
+        if (req.amount <= 0 || req.amount > MAX_AMOUNT) {
+            throw DigdaException(ErrorCode.EXPENSE_AMOUNT_INVALID)
+        }
+        if ((req.memo?.trim()?.length ?: 0) > MAX_MEMO_LENGTH) {
+            throw DigdaException(ErrorCode.EXPENSE_MEMO_TOO_LONG)
         }
     }
 
